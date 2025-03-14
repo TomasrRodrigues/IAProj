@@ -15,14 +15,16 @@ current_player = "black"
 
 width = screen.get_height()/8
 
+# dictionary defining the board, where the key is the tuple for its coord, with the color to be drawn and the position on the screen
 tiles = {(1,1):{"color":"grey","pos":(-3*width,0)},              (1,2):{"color":"darkblue","pos":(-9/4*width,-width/2)}, (1,3):{"color":"darkblue","pos":(-3/2*width,-width)},(1,4):{"color":"darkblue","pos":(-3/4*width,-3/2*width)},(1,5):{"color":"grey","pos":(0,-2*width)},
          (2,1):{"color":"darkblue","pos":(-9/4*width,width/2)},  (2,2):{"color":"white","pos":(-3/2*width,0)},          (2,3):{"color":"white","pos":(-3/4*width,-width/2)}, (2,4):{"color":"white","pos":(0,-width)},               (2,5):{"color":"darkblue","pos":(3/4*width,-3/2*width)},
          (3,1):{"color":"darkblue","pos":(-3/2*width,width)},    (3,2):{"color":"white","pos":(-3/4*width,width/2)},    (3,3):{"color":"grey","pos":(0,0)},                 (3,4):{"color":"white","pos":(3/4*width,-width/2)},    (3,5):{"color":"darkblue","pos":(3/2*width,-width)},
          (4,1):{"color":"darkblue","pos":(-3/4*width,3/2*width)},(4,2):{"color":"white","pos":(0,width)},               (4,3):{"color":"white","pos":(3/4*width,width/2)},  (4,4):{"color":"white","pos":(3/2*width,0)},            (4,5):{"color":"darkblue","pos":(9/4*width,-width/2)},
          (5,1):{"color":"grey","pos":(0,2*width)},               (5,2):{"color":"darkblue","pos":(3/4*width,3/2*width)},(5,3):{"color":"darkblue","pos":(3/2*width,width)}, (5,4):{"color":"darkblue","pos":(9/4*width,width/2)},   (5,5):{"color":"grey","pos":(3*width,0)}}
 
-
-#(coord(x,y), color)
+# list of all pieces in the game, 6 black and 6 white at the start
+# pieces not placed yet have a coord of (-1,-1)
+# (coord(x,y), color)
 pieces = [((-1,-1),"black"),
           ((-1,-1),"black"),
           ((-1,-1),"black"),
@@ -36,9 +38,11 @@ pieces = [((-1,-1),"black"),
           ((-1,-1),"white"),
           ((-1,-1),"white")]
 
+# vector sum
 def adjust_pos(pos1, pos2):
     return (pos1[0] + pos2[0], pos1[1] + pos2[1])
 
+# draws the board
 def drawBoard(l):
     for tile in l:
         cur = l[tile]
@@ -57,6 +61,7 @@ def drawBoard(l):
                                         adjust_pos(center, (-width/4, -width/2))], 1)    
     return
 
+# draws all of the pieces from the given list that have been palced on the board
 def drawPieces(l):
     for piece in l:
         if piece[0] == (-1,-1):
@@ -67,6 +72,8 @@ def drawPieces(l):
         pygame.draw.circle(screen, "black", pos, width/4, 1)
     return
 
+# parses a move input and calls for the move
+# returns 0 on success and 1 on failure
 def parseInput(text):
     place = re.search("^[(][1-5],[1-5][)]$", text)
     move = re.search("^[(][1-5],[1-5][)][-][(][1-5],[1-5][)]$", text)
@@ -86,9 +93,10 @@ def parseInput(text):
         print("Invalid input")
         return 1
 
+# calls for move validity check and applies if possible
+# returns 0 on success and 1 on failure
 def movePiece(ip,fp):
     valid = True
-    
 
     for piece in pieces:
         if piece[0] == fp: 
@@ -101,10 +109,29 @@ def movePiece(ip,fp):
             if piece[0] == ip and piece[1] == current_player:
                 n = pieces.index(piece)
                 pieces[n] = (fp, piece[1])
-                
+                # change to check move validity
                 return 0
     print("Invalid move")
     return 1
+
+# checks all valid moves by a given piece
+# return a list with said moves
+def validMovesPiece(piece):
+    # possible directions:
+    # change in one of the coordinates (1,1)-
+    # inverse change in both coordinates (3,3)-(2,4) or (3,3)-(4,2)
+    # if piece not placed, get all free squares
+    # if piece is on its own color, can move any number of squares until in another color
+    lst = list()
+    return lst
+
+# checks all valid moves by a given color
+# returns a list with said moves
+def validMoves(color):
+    lst = []
+    for piece in pieces:
+        if piece[1] == color: lst.append(validMovesPiece(piece))
+    return lst
 
 center_pos = pygame.Vector2(screen.get_width() / 2, screen.get_height() / 2)
 
