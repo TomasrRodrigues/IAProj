@@ -98,6 +98,14 @@ def drawWaitingPieces():
             pygame.draw.circle(screen, "black", (x, y), width / 4, 1)
 
 
+# Function to check if a tile is already occupied
+def is_tile_occupied(tile):
+    for piece in pieces:
+        if piece[0] == tile:
+            return True
+    return False
+
+
 #Game Loop
 while running:
     screen.fill("lightgoldenrod")
@@ -124,8 +132,11 @@ while running:
             for tile in tiles:
                 center = adjust_pos(tiles[tile]["pos"], center_pos)
                 if (mx - center[0]) ** 2 + (my - center[1]) ** 2 < (width / 2) ** 2:
-                    pieces[dragging_piece] = (tile, pieces[dragging_piece][1])
-                    current_player = "white" if current_player == "black" else "black"
+                    if not is_tile_occupied(tile):
+                        pieces[dragging_piece] = (tile, pieces[dragging_piece][1])
+                        current_player = "white" if current_player == "black" else "black"
+                    else:
+                        print("Invalid Move - Tile occupied")
             dragging_piece = None
             dragging_pos = None
         elif event.type == pygame.MOUSEMOTION and dragging_piece is not None:
