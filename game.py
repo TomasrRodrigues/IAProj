@@ -159,6 +159,49 @@ def is_valid_move(original_position, expected_position):
     return expected_position in possible_moves
 
 
+def flip_pieces(moved_to, player_color):
+    """
+    Check all directions for opponent pieces that are sandwiched between the moved piece
+    and another piece of the same color. If a sandwich is found, flip those pieces.
+    """
+    directions = [
+        (0, 1), (0, -1),  # Vertical
+        (1, 0), (-1, 0),  # Horizontal
+        (1, -1), (-1, 1)  # Diagonal
+    ]
+
+    opponent_color = "white" if player_color == "black" else "black"
+
+    for dx, dy in directions:
+        x, y = moved_to
+        to_flip = []  # Store indices of opponent pieces to flip
+        while True:
+            x += dx
+            y += dy
+
+            if (x, y) not in tiles:  # Out of bounds
+                break
+
+            found_piece = None
+            for i, piece in enumerate(pieces):
+                if piece[0] == (x, y):
+                    found_piece = (i, piece[1])
+                    break
+
+            if found_piece is None:  # Empty space, no sandwich possible
+                break
+
+            if found_piece[1] == opponent_color:
+                to_flip.append(found_piece[0])
+            elif found_piece[1] == player_color:
+                # Flip all opponent pieces in the chain
+                for idx in to_flip:
+                    pieces[idx] = (pieces[idx][0], player_color)
+                break
+            else:
+                break
+
+
 # Game Loop
 while running:
     screen.fill("lightgoldenrod")
@@ -205,6 +248,9 @@ while running:
                     # Ensure the move is valid and the tile is unoccupied
                     if is_valid_move(original_position, expected_position) and not is_tile_occupied(tile):
                         pieces[dragging_piece] = (tile, pieces[dragging_piece][1])
+                        if original_position!= (-1, -1):
+                            flip_pieces(tile, pieces[dragging_piece][1])
+
                         current_player = "white" if current_player == "black" else "black"
 
                         possible_moves = movable_places(tile, pieces[dragging_piece][1])
