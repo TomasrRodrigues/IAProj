@@ -204,6 +204,82 @@ def flip_pieces(moved_to, original_position, player_color):
                 break
 
 
+def check_lose():
+
+    directions=[
+        (0, 1),  # Vertical
+        (1, 0),  # Horizontal
+        (1, -1)  # Diagonal
+    ]
+
+    for piece in pieces:
+        pos, color = piece
+
+        if pos==(-1,-1):
+            continue
+        for dx,dy in directions:
+            count=1
+            x, y =pos
+            while True:
+                x+=dx
+                y+=dy
+                if (x, y) in tiles and any(p[0] == (x,y) and p[1]==color for p in pieces):
+                    count+=1
+                else:
+                    break
+            x,y=pos
+            while True:
+                x-=dx
+                y-=dy
+                if(x, y) in tiles and any(p[0] == (x,y) and p[1]==color for p in pieces):
+                    count+=1
+                else:
+                    break
+            if count>=5:
+                return color
+    return None
+
+def check_win(original_position):
+    if original_position==(-1, -1):
+        return None
+
+    directions = [
+        (0, 1),  # Vertical
+        (1, 0),  # Horizontal
+        (1, -1)  # Diagonal
+    ]
+
+    for piece in pieces:
+        pos, color = piece
+
+        if pos == (-1, -1):
+            continue
+        for dx, dy in directions:
+            count = 1
+            x, y = pos
+            while True:
+                x += dx
+                y += dy
+                if (x, y) in tiles and any(p[0] == (x, y) and p[1] == color for p in pieces):
+                    count += 1
+                else:
+                    break
+            x, y = pos
+            while True:
+                x -= dx
+                y -= dy
+                if (x, y) in tiles and any(p[0] == (x, y) and p[1] == color for p in pieces):
+                    count += 1
+                else:
+                    break
+            if count == 4:
+                return color
+    return None
+
+
+
+
+
 # Game Loop
 while running:
     screen.fill("lightgoldenrod")
@@ -253,9 +329,20 @@ while running:
 
                         flip_pieces(tile, original_position, pieces[dragging_piece][1])
 
+                        loser=check_lose()
+                        if loser is not None:
+                            print(f"Player {loser} loses!")
+                            running=False
+
+                        winner = check_win(original_position)
+                        if winner is not None:
+                            print(f"Player {winner} wins!")
+                            running=False
                         current_player = "white" if current_player == "black" else "black"
 
                         possible_moves = movable_places(tile, pieces[dragging_piece][1])
+
+
                         print(f"Possible moves for piece at {tile}: {possible_moves}")
                     else:
                         print("Invalid Move - Either not a valid move or tile occupied")
