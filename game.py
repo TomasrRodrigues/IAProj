@@ -159,16 +159,18 @@ def is_valid_move(original_position, expected_position):
     return expected_position in possible_moves
 
 
-def flip_pieces(moved_to, player_color):
-    """
-    Check all directions for opponent pieces that are sandwiched between the moved piece
-    and another piece of the same color. If a sandwich is found, flip those pieces.
-    """
+#Check if (after a move not a place) some pieces are "sandwiched" and flip them
+def flip_pieces(moved_to, original_position, player_color):
+
     directions = [
         (0, 1), (0, -1),  # Vertical
         (1, 0), (-1, 0),  # Horizontal
         (1, -1), (-1, 1)  # Diagonal
     ]
+
+    #Check if it was a movement
+    if original_position==(-1, -1):
+        return None
 
     opponent_color = "white" if player_color == "black" else "black"
 
@@ -248,8 +250,8 @@ while running:
                     # Ensure the move is valid and the tile is unoccupied
                     if is_valid_move(original_position, expected_position) and not is_tile_occupied(tile):
                         pieces[dragging_piece] = (tile, pieces[dragging_piece][1])
-                        if original_position!= (-1, -1):
-                            flip_pieces(tile, pieces[dragging_piece][1])
+
+                        flip_pieces(tile, original_position, pieces[dragging_piece][1])
 
                         current_player = "white" if current_player == "black" else "black"
 
