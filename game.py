@@ -72,7 +72,7 @@ def draw_text(text, pos, font, color="black"):
 def home_screen():
     while True:
         screen.fill("lightblue")
-        draw_text("Hexagonal Strategy Game", (400, 150), font_large)
+        draw_text("Yonmoque-Hex Game", (500, 150), font_large)
         draw_text("1. Start Game", (550, 250), font_small)
         draw_text("2. Instructions", (550, 300), font_small)
         draw_text("3. Quit", (550, 350), font_small)
@@ -84,12 +84,36 @@ def home_screen():
                 exit()
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_1:
-                    return  # Start game
+                    choose_game_screen()  # Start game
                 elif event.key == pygame.K_2:
                     instructions_screen()
                 elif event.key == pygame.K_3:
                     pygame.quit()
                     exit()
+
+def choose_game_screen():
+    while True:
+        screen.fill("lightgoldenrod")
+        draw_text("Choose yout gamestyle", (500, 150), font_large)
+        draw_text("1. Person vs Person", (550, 250), font_small)
+        draw_text("2. Person vs Computer", (550, 300), font_small)
+        draw_text("3. Computer vs Computer", (550, 350), font_small)
+        draw_text("4. Go Back", (550, 400), font_small)
+
+        pygame.display.flip()
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                exit()
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_1:
+                    game_loop()
+
+                if event.key == pygame.K_4:
+                    home_screen()
+
+
 
 def instructions_screen():
     while True:
