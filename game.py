@@ -1,5 +1,19 @@
 import pygame
 import re
+import copy
+
+class TreeNode:
+    def __init__(self, state, parent=None):
+        self.state = state  # The game state at this node
+        self.parent = parent  # The parent node
+        self.children = []  # List of child nodes
+
+    def add_child(self, child_state):
+        """Creates a new child node and adds it to the current node."""
+        child_node = TreeNode(child_state, parent=self)
+        self.children.append(child_node)
+        return child_node
+
 
 # -----------------------------
 # Initialization and Setup
@@ -71,7 +85,7 @@ def draw_text(text, pos, font, color="black"):
 # -----------------------------
 def home_screen():
     while True:
-        screen.fill("lightblue")
+        screen.fill("lightgoldenrod")
         draw_text("Yonmoque-Hex Game", (500, 150), font_large)
         draw_text("1. Start Game", (550, 250), font_small)
         draw_text("2. Instructions", (550, 300), font_small)
@@ -112,7 +126,6 @@ def choose_game_screen():
 
                 if event.key == pygame.K_4:
                     home_screen()
-
 
 
 def instructions_screen():
@@ -346,6 +359,115 @@ def check_win(original_position):
                 return color
     return None
 
+
+# -----------------------------
+# AI, minimax implementation
+# -----------------------------
+
+
+def evaluate_board(board, player, original_position):
+    # Function evaluate board will be critical for the minimax implementation.
+    # The objective is to be called at each node in order to attribute a value to each node
+    #
+    # This function evaluates the state of the board from the perspective of 'player'
+    # Receives as a parameter:
+    #   - board: (board state) as list
+    #   - player: "black" or "white"
+    #   - original_position: the position of the piece moved before movement
+    #
+    # Returns numeric score (the higher the better)
+
+    last_move_was_movement = True
+
+    if original_position == (-1, -1):
+        last_move_was_movement = False
+
+
+    opponent = "white" if player == "black" else "black"
+
+    # Check Loss: if 5 in a row appears, it's a loss (even if it was a placement)
+    if check_lose() == player:
+        return -1000
+    if check_lose() == opponent:
+        return 1000
+
+    score = 0
+
+    # Only reward a win if the last move was a movement
+    if last_move_was_movement:
+        # For win condition, we call check_win with a valid moved piece's position.
+        # (Here, you might need to store or pass in the position of the last moved piece.)
+        # For this example, assume we have a variable last_moved_piece_pos.
+        last_moved_piece_pos = original_position  # You would implement this
+        win_result = check_win(last_moved_piece_pos)
+        if win_result == player:
+            return 1000
+        elif win_result == opponent:
+            return -1000
+
+    # Heuristic: Alignment of pieces (even if from placement moves, they hint at potential)
+    for piece in board:
+        pos, color = piece
+        if pos == (-1, -1):
+            # You might want to add a small bonus for having pieces in reserve
+            score += 2 if color == player else -2
+            continue
+        # Add alignment score (your count_alignment already gives a value based on 2/3 in a row)
+        if color == player:
+            score += count_alignment(pos, player) * 10
+        else:
+            score -= count_alignment(pos, opponent) * 10
+
+    # Heuristic: Mobility (using get_valid_moves which aggregates movable_places)
+    player_moves = len(get_valid_moves(board, player))
+    opponent_moves = len(get_valid_moves(board, opponent))
+    score += (player_moves - opponent_moves) * 5
+
+    return score
+
+
+def count_alignment(position, player):
+
+    # Returns a score based on how many pieces are aligned
+
+    directions = [(0, 1), (1, 0), (1, -1)]
+    total_score = 0
+
+    for dx, dy in directions:
+        count = 1
+        x, y = position
+
+        # Forward search
+        while (x + dx, y + dy) in tiles and any(p[0] == (x + dx, y + dy) and p[1] == player for p in pieces):
+            count += 1
+            x += dx
+            y += dy
+
+        # Backward search
+        x, y = position
+        while (x - dx, y - dy) in tiles and any(p[0] == (x - dx, y - dy) and p[1] == player for p in pieces):
+            count += 1
+            x -= dx
+            y -= dy
+
+        if count == 3:
+            total_score += 5
+        elif count == 2:
+            total_score += 2
+
+    return total_score
+
+
+def get_valid_moves(board, player):
+    valid_moves = []
+    for index, (piece_pos, piece_color) in enumerate(board):
+        if piece_color == player:
+            moves = movable_places(piece_pos, piece_color)
+            for move in moves:
+                valid_moves.append((index, move))
+    return valid_moves
+
+
 # -----------------------------
 # Main Game Loop
 # -----------------------------
@@ -416,6 +538,9 @@ def game_loop():
                             current_player = "white" if current_player == "black" else "black"
                             possible_moves = movable_places(tile, pieces[dragging_piece][1])
                             print(f"Possible moves for piece at {tile}: {possible_moves}")
+                            print(evaluate_board(pieces, current_player, original_position))
+
+
                         else:
                             print("Invalid Move - Either not a valid move or tile occupied")
                 dragging_piece = None
@@ -426,6 +551,7 @@ def game_loop():
 
         pygame.display.flip()
         dt = clock.tick(60) / 1000
+
 
 # -----------------------------
 # Main Entry Point
