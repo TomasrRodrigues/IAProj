@@ -1,91 +1,64 @@
-from game import isTerminal, evaluate_board, get_valid_moves, make_move, check_win, check_lose
-import copy
-
-def isTerminal(board_state, original_position):
-    if check_win(original_position) is not None or check_lose() is not None:
-        return True
-    return False
-
-
-def make_move(board_state, move):
-    new_board = copy.deepcopy(board_state)
-    piece_index, new_tile = move
-    piece = new_board[piece_index]
-    original_position = piece[0]
-    new_board[piece_index] = (new_tile, piece[1])
-
-    new_board = flip_pieces_on_board(new_board, new_tile, original_position, piece[1])
-    return new_board
-
-def flip_pieces_on_board(board, moved_to, original_position, player_color):
+def minimax(state, depth, alpha, beta, maximizing_player, last_play_was_movement):
     """
-    Similar to your flip_pieces but operating on the provided board state.
-    Returns the board after flipping opponent pieces.
+    Minimax algorithm with Alpha-Beta Pruning.
+
+    - `state`: The current game state.
+    - `depth`: The remaining depth to search.
+    - `alpha`: Best already found for maximizing player.
+    - `beta`: Best already found for minimizing player.
+    - `maximizing_player`: True if it's AI's turn, False if it's the opponent's.
+    - `last_play_was_movement`: True if last action was a move, False if it was a placement.
     """
-    directions = [
-        (0, 1), (0, -1),
-        (1, 0), (-1, 0),
-        (1, -1), (-1, 1)
-    ]
-    if original_position == (-1, -1):
-        return board  # No flipping when placing a piece from reserve
-    opponent_color = "white" if player_color == "black" else "black"
-    for dx, dy in directions:
-        x, y = moved_to
-        to_flip = []
-        while True:
-            x += dx
-            y += dy
-            if (x, y) not in tiles:
-                break
-            found_piece = None
-            for i, piece in enumerate(board):
-                if piece[0] == (x, y):
-                    found_piece = (i, piece[1])
-                    break
-            if found_piece is None:
-                break
-            if found_piece[1] == opponent_color:
-                to_flip.append(found_piece[0])
-            elif found_piece[1] == player_color:
-                for idx in to_flip:
-                    # Flip the piece by simply setting its color to player_color.
-                    board[idx] = (board[idx][0], player_color)
-                break
-            else:
-                break
-    return board
 
-def minimax(board_state, depth, alpha, beta, maximizingPlayer, player_color, original_position):
+    # Base case: If depth is 0 or the game is over, evaluate the board
+    if depth == 0 or state.is_game_over(last_play_was_movement):
+        return state.evaluate_board(last_play_was_movement), None  # Return board evaluation
 
-    if depth ==0 or isTerminal(board_state, original_position):
-        return evaluate_board(board_state, player_color, original_position), None
+    best_move = None
 
-    if maximizingPlayer:
-        maxEval = float("-inf")
-        bestMove = None
-        for move in get_valid_moves(board_state, player_color):
-            new_board_state = make_move(board_state, move)
-            eval, _ = minimax(new_board_state, depth - 1, alpha, beta, False, player_color, move[1])
-            if eval > maxEval:
-                maxEval = eval
-                bestMove = move
-            alpha= max(alpha, eval)
-            if alpha >= beta:
+    if maximizing_player:
+        best_value = float('-inf')
+        for move in state.get_valid_plays():
+            print(move)
+            if move[0] == 'move':
+                new_state = state.make_move(move)
+            elif move[0] == 'place':
+                new_state = state.place_piece(move[1], state.current_player)
+
+            # Update last_play_was_movement flag
+            new_last_play_was_movement = (move[0] == "move")
+
+            # Recursively call minimax for the opponent's turn
+            value, _ = minimax(new_state, depth - 1, alpha, beta, False, new_last_play_was_movement)
+
+            if value > best_value:
+                best_value = value
+                best_move = move
+
+            alpha = max(alpha, best_value)
+            if beta <= alpha:  # Beta cutoff
                 break
-        return maxEval, bestMove
-
     else:
-        opponent = "white" if player_color=="black" else "black"
-        bestScore=float("inf")
-        bestMove=None
-        for move in get_valid_moves(board_state, opponent):
-            new_board_state= make_move(board_state, move)
-            score, _ = minimax(new_board_state, depth - 1, alpha, beta, True, player_color, move[1])
-            if score < bestScore:
-                bestScore = score
-                bestMove = move
-            beta= min(beta, score)
-            if alpha >= beta:
+        best_value = float('inf')
+        for move in state.get_valid_plays():
+            print(move)
+            if move[0] == 'move':
+                new_state = state.make_move(move)
+            elif move[0] == 'place':
+                new_state = state.place_piece(move[1], state.current_player)
+
+            # Update last_play_was_movement flag
+            new_last_play_was_movement = (move[0] == "move")
+
+            # Recursively call minimax for the opponent's turn
+            value, _ = minimax(new_state, depth - 1, alpha, beta, True, new_last_play_was_movement)
+
+            if value < best_value:
+                best_value = value
+                best_move = move
+
+            beta = min(beta, best_value)
+            if beta <= alpha:  # Alpha cutoff
                 break
-        return bestScore, bestMove
+
+    return best_value, best_move

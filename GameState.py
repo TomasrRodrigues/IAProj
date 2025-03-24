@@ -6,6 +6,7 @@ import copy
 width=GameConstants.width
 
 class GameState:
+
     def __init__(self):
         self.tiles =  {
                 (1, 1): {"color": "grey", "pos": (-3 * width, 0)},
@@ -49,21 +50,32 @@ class GameState:
 
     #Function to place a piece
     def place_piece(self, tile, color):
-        if(self.is_tile_occupied(tile)):
-            print ("Tile already occupied")
-            return None
-        if self.reserve[color]<=0:
-            print(f"No {color} pieces left to place")
-            return None
-        self.pieces.append((tile, color))
-        self.reserve[color]-=1
+        # Create a deep copy of the current game state
+        new_state = copy.deepcopy(self)
 
+        if new_state.is_tile_occupied(tile):
+            print("Tile already occupied")
+            return self  # Return the unchanged state
+
+        if new_state.reserve[color] <= 0:
+            print(f"No {color} pieces left to place")
+            return self  # Return the unchanged state
+
+        # Apply the placement in the new state
+        new_state.pieces.append((tile, color))
+        new_state.reserve[color] -= 1
+
+        return new_state  # Return the updated game state
 
     #Function to make a move (should be checked if it's valid before, not cheking here)
     #Returns new state of the board
     def make_move(self, move):
         new_state = copy.deepcopy(self)
-        piece_pos, new_tile = move  # piece_pos is (x, y) instead of an index
+        print(move)
+        if type(move[0])==str:
+            _, piece_pos, new_tile = move  # piece_pos is (x, y) instead of an index
+        else:
+            piece_pos, new_tile = move
 
         # Find the piece that is currently at piece_pos
         piece_index = None
@@ -84,17 +96,31 @@ class GameState:
 
         return new_state
 
+    def is_game_over(self, last_play_was_movement):
+        """
+        Returns True if the game has ended based on the last action.
+
+        A player loses immediately after either a move or a placement.
+        A player wins only after a move.
+        """
+        if self.check_lose() is not None:  # If someone lost, the game is over
+            return True
+        if last_play_was_movement and self.check_win() is not None:  # Winning only happens after a move
+            return True
+        return False
+
     #Get valid plays for a player with a certain state of the board
     def get_valid_plays(self):
         valid_moves = []
 
         #Get Valid moves
-        for index, (piece_pos, piece_color) in enumerate(self.pieces):
+        print(self.pieces)
+        for piece_pos, piece_color in self.pieces:
             if piece_color!=self.current_player:
                 continue
             moves= self.movable_places(piece_pos, piece_color)
             for move in moves:
-                valid_moves.append(("move", index, move))
+                valid_moves.append(("move", piece_pos, move))
 
         #Get Valid places
         if self.reserve[self.current_player]>0:
@@ -103,6 +129,7 @@ class GameState:
                     valid_moves.append(("place", tile))
 
         return valid_moves
+
 
     #BOOLEAN: Check if a tile is occupied
     def is_tile_occupied(self, tile):
@@ -137,7 +164,6 @@ class GameState:
                     break
                 possible_moves.add((x, y))
         return possible_moves
-
 
     def is_valid_move(self, original_position, expected_position):
         piece_color = None
@@ -226,6 +252,7 @@ class GameState:
                     return color
         return None
 
+
     #Check win does not check if the play was a movement, yet to implement
     def check_win(self):
         directions = [
@@ -259,53 +286,47 @@ class GameState:
                     return color
         return None
 
-
     def evaluate_board(self, last_play_was_movement):
-
-        last_play_was_movement = True
-
         opponent = "white" if self.current_player == "black" else "black"
 
-        # Check Loss: if 5 in a row appears, it's a loss (even if it was a placement)
+        # Check immediate 5-in-a-row loss for either side (always triggers a loss).
         if self.check_lose() == self.current_player:
-            return -1000
-        if self.check_lose() == opponent:
-            return 1000
+            return -10000
+        elif self.check_lose() == opponent:
+            return 10000
+
+        # If the last move was a movement, check 4-in-a-row.
+        if last_play_was_movement:
+            if self.check_win() == self.current_player:
+                return 10000
+            elif self.check_win() == opponent:
+                return -10000
 
         score = 0
 
-        # Only reward a win if the last move was a movement
-        if last_play_was_movement:
-            # For win condition, we call check_win with a valid moved piece's position.
-            # (Here, you might need to store or pass in the position of the last moved piece.)
-            # For this example, assume we have a variable last_moved_piece_pos.
-            #last_moved_piece_pos = original_position  You would implement this
-            win_result = self.check_win()
-            if win_result == self.current_player:
-                return 1000
-            elif win_result == opponent:
-                return -1000
+        # Threat check: if the opponent has 3 in a row, subtract a huge penalty.
+        for (pos, color) in self.pieces:
+            if color == opponent:
+                align = self.count_alignment(pos, opponent)
+                if align >= 3:
+                    score -= 1000  # Large enough to force a block
 
-        # Heuristic: Alignment of pieces (even if from placement moves, they hint at potential)
-        for piece in self.pieces:
-            pos, color = piece
-            if pos == (-1, -1):
-                # You might want to add a small bonus for having pieces in reserve
-                score += 2 if color == self.current_player else -2
-                continue
-            # Add alignment score (your count_alignment already gives a value based on 2/3 in a row)
+        # Normal alignment scoring
+        for (pos, color) in self.pieces:
+            align = self.count_alignment(pos, color)
             if color == self.current_player:
-                score += self.count_alignment(pos, self.current_player) * 10
+                score += align * 10
             else:
-                score -= self.count_alignment(pos, opponent) * 10
+                # Heavier penalty for opponent alignments
+                score -= align * 15
 
-        # Heuristic: Mobility (using get_valid_moves which aggregates movable_places)
+        # Mobility difference
         player_moves = len(self.get_valid_plays())
         temp = self.current_player
         self.current_player = opponent
-        opponent_moves = len(self.get_valid_plays())
+        opp_moves = len(self.get_valid_plays())
         self.current_player = temp
-        score += (player_moves - opponent_moves) * 5
+        score += (player_moves - opp_moves) * 5
 
         return score
 
