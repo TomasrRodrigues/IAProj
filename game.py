@@ -57,6 +57,8 @@ tiles = {
     (5, 5): {"color": "grey", "pos": (3 * width, 0)}
 }
 
+pieces=[]
+
 def init_game():
     """Initialize or reset game state."""
     global pieces, current_player, dragging_piece, dragging_pos
@@ -124,9 +126,11 @@ def choose_game_screen():
                 if event.key == pygame.K_1:
                     game_loop()
 
+                if event.key == pygame.K_2:
+                    game_personvsccomp_loop()
+
                 if event.key == pygame.K_4:
                     home_screen()
-
 
 def instructions_screen():
     while True:
@@ -216,6 +220,7 @@ def is_tile_occupied(tile):
         if piece[0] == tile:
             return True
     return False
+
 
 def movable_places(piece_pos, piece_color):
     if piece_pos == (-1, -1):
@@ -365,6 +370,7 @@ def check_win(original_position):
 # -----------------------------
 
 
+#    Board Evaluation functions
 def evaluate_board(board, player, original_position):
     # Function evaluate board will be critical for the minimax implementation.
     # The objective is to be called at each node in order to attribute a value to each node
@@ -425,7 +431,6 @@ def evaluate_board(board, player, original_position):
 
     return score
 
-
 def count_alignment(position, player):
 
     # Returns a score based on how many pieces are aligned
@@ -457,7 +462,6 @@ def count_alignment(position, player):
 
     return total_score
 
-
 def get_valid_moves(board, player):
     valid_moves = []
     for index, (piece_pos, piece_color) in enumerate(board):
@@ -466,6 +470,116 @@ def get_valid_moves(board, player):
             for move in moves:
                 valid_moves.append((index, move))
     return valid_moves
+
+
+# Functions that could be useful
+def isTerminal(board_state, original_position):
+    if check_win(original_position) is not None or check_lose() is not None:
+        return True
+    return False
+
+def make_move(board_state, move):
+    new_board = copy.deepcopy(board_state)
+    piece_index, new_tile = move
+    piece = new_board[piece_index]
+    original_position = piece[0]
+    new_board[piece_index] = (new_tile, piece[1])
+
+    new_board = flip_pieces_on_board(new_board, new_tile, original_position, piece[1])
+    return new_board
+
+def flip_pieces_on_board(board, moved_to, original_position, player_color):
+    """
+    Similar to your flip_pieces but operating on the provided board state.
+    Returns the board after flipping opponent pieces.
+    """
+    directions = [
+        (0, 1), (0, -1),
+        (1, 0), (-1, 0),
+        (1, -1), (-1, 1)
+    ]
+    if original_position == (-1, -1):
+        return board  # No flipping when placing a piece from reserve
+    opponent_color = "white" if player_color == "black" else "black"
+    for dx, dy in directions:
+        x, y = moved_to
+        to_flip = []
+        while True:
+            x += dx
+            y += dy
+            if (x, y) not in tiles:
+                break
+            found_piece = None
+            for i, piece in enumerate(board):
+                if piece[0] == (x, y):
+                    found_piece = (i, piece[1])
+                    break
+            if found_piece is None:
+                break
+            if found_piece[1] == opponent_color:
+                to_flip.append(found_piece[0])
+            elif found_piece[1] == player_color:
+                for idx in to_flip:
+                    # Flip the piece by simply setting its color to player_color.
+                    board[idx] = (board[idx][0], player_color)
+                break
+            else:
+                break
+    return board
+
+#    Minimax
+def minimax(board_state, depth, alpha, beta, maximizingPlayer, player_color, original_position):
+    """
+        Minimax algorithm with alpha-beta pruning.
+
+        Parameters:
+          board: current board state (a list like your 'pieces')
+          depth: current search depth (stop at 0)
+          alpha: best value that the maximizer currently can guarantee
+          beta: best value that the minimizer currently can guarantee
+          maximizingPlayer: Boolean; True if the current turn is for 'player'
+          player: The AI's color ("black" or "white")
+          original_position: The position of the piece moved that led to this state.
+                             This is used in evaluate_board to decide if the move was a movement.
+
+        Returns:
+          (score, best_move) where best_move is in the form (piece_index, new_tile)
+        """
+
+    if depth ==0 or isTerminal(board_state, original_position):
+        return evaluate_board(board_state, player_color, original_position), None
+
+    if maximizingPlayer:
+        maxEval = float("-inf")
+        bestMove = None
+        for move in get_valid_moves(board_state, player_color):
+            new_board_state = make_move(board_state, move)
+            eval, _ = minimax(new_board_state, depth - 1, alpha, beta, False, player_color, move[1])
+            if eval > maxEval:
+                maxEval = eval
+                bestMove = move
+            alpha= max(alpha, eval)
+            if alpha >= beta:
+                break
+        return maxEval, bestMove
+
+    else:
+        opponent = "white" if player_color=="black" else "black"
+        bestScore=float("inf")
+        bestMove=None
+        for move in get_valid_moves(board_state, opponent):
+            new_board_state= make_move(board_state, move)
+            score, _ = minimax(new_board_state, depth - 1, alpha, beta, True, player_color, move[1])
+            if score < bestScore:
+                bestScore = score
+                bestMove = move
+            beta= min(beta, score)
+            if alpha >= beta:
+                break
+        return bestScore, bestMove
+
+
+
 
 
 # -----------------------------
@@ -548,6 +662,127 @@ def game_loop():
 
             elif event.type == pygame.MOUSEMOTION and dragging_piece is not None:
                 dragging_pos = event.pos
+
+        pygame.display.flip()
+        dt = clock.tick(60) / 1000
+
+
+def game_personvsccomp_loop():
+    global pieces, dragging_piece, dragging_pos, current_player, dt
+    running = True
+    init_game()  # Reset game state before starting the loop
+
+    # For this example, let's assume:
+    # - Human plays "white"
+    # - Computer plays "black"
+    # And human always starts.
+    current_player = "white"
+
+    while running:
+        screen.fill("lightgoldenrod")
+        drawBoard()
+        drawPieces()
+        drawWaitingPieces()
+        drawDraggingPiece()
+
+        # Handle human input only if it's human's turn.
+        if current_player == "white":
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    exit()
+                elif event.type == pygame.MOUSEBUTTONDOWN:
+                    mx, my = event.pos
+                    for i, piece in enumerate(pieces):
+                        piece_pos, piece_color = piece
+
+                        # Clicking an unplaced piece (waiting on the side)
+                        if piece_pos == (-1, -1) and piece_color == current_player:
+                            x = 100 + (i % 6) * 50
+                            y = 50 if piece_color == "black" else 600
+                            if (mx - x) ** 2 + (my - y) ** 2 < (width / 4) ** 2:
+                                dragging_piece = i
+                                dragging_pos = (mx, my)
+                                break
+
+                        # Clicking an already placed piece
+                        elif piece_pos in tiles:
+                            center = adjust_pos(tiles[piece_pos]["pos"], center_pos)
+                            if (mx - center[0]) ** 2 + (my - center[1]) ** 2 < (width / 4) ** 2:
+                                if piece_color == current_player:
+                                    dragging_piece = i
+                                    dragging_pos = (mx, my)
+                                break
+
+                elif event.type == pygame.MOUSEBUTTONUP and dragging_piece is not None:
+                    mx, my = event.pos
+                    for tile in tiles:
+                        center = adjust_pos(tiles[tile]["pos"], center_pos)
+                        if (mx - center[0]) ** 2 + (my - center[1]) ** 2 < (width / 2) ** 2:
+                            original_position = pieces[dragging_piece][0]
+                            expected_position = tile
+                            if is_valid_move(original_position, expected_position) and not is_tile_occupied(tile):
+                                pieces[dragging_piece] = (tile, pieces[dragging_piece][1])
+                                flip_pieces(tile, original_position, pieces[dragging_piece][1])
+
+                                # Check for win/loss conditions
+                                loser = check_lose()
+                                if loser is not None:
+                                    winner = "white" if loser == "black" else "black"
+                                    win_screen(winner)
+                                    return
+
+                                winner = check_win(original_position)
+                                if winner is not None:
+                                    win_screen(winner)
+                                    return
+
+                                # After a valid human move, switch to computer's turn.
+                                current_player = "black"
+                                break
+                            else:
+                                print("Invalid Move - Either not a valid move or tile occupied")
+                    dragging_piece = None
+                    dragging_pos = None
+
+                elif event.type == pygame.MOUSEMOTION and dragging_piece is not None:
+                    dragging_pos = event.pos
+
+        # If it's the computer's turn, let minimax decide and execute the move.
+        if current_player == "black":
+            # For debugging, you might print the board evaluation before the computer move.
+            print("Computer is thinking...")
+
+            # Call minimax.
+            # We use a depth of 12 (as you specified) and pass (-1,-1) as original_position if move is from reserve.
+            score, best_move = minimax(pieces, depth=5, alpha=-float("inf"), beta=float("inf"),
+                                       maximizingPlayer=True, player_color="black", original_position=(-1, -1))
+            if best_move is not None:
+                # Apply the computer's best move.
+                pieces = make_move(pieces, best_move)
+                # Optionally, flip pieces have been applied inside make_move.
+                print(f"Computer plays move: {best_move} with score {score}")
+
+                # Check win/loss conditions after the computer move.
+                loser = check_lose()
+                if loser is not None:
+                    winner = "white" if loser == "black" else "black"
+                    win_screen(winner)
+                    return
+
+                winner = check_win(best_move[1])
+                if winner is not None:
+                    win_screen(winner)
+                    return
+
+                # Switch back to human turn.
+                current_player = "white"
+            else:
+                print("No valid moves for computer!")
+                current_player = "white"  # Fallback in case no move is found
+
+            # Introduce a short delay so the computer's move is visible.
+            pygame.time.delay(500)
 
         pygame.display.flip()
         dt = clock.tick(60) / 1000
