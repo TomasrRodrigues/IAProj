@@ -1,3 +1,4 @@
+
 import GameConstants
 import copy
 
@@ -5,16 +6,49 @@ import copy
 width=GameConstants.width
 
 class GameState:
+
     def __init__(self):
+        self.tiles =  {
+                (1, 1): {"color": "grey", "pos": (-3 * width, 0)},
+                (1, 2): {"color": "darkblue", "pos": (-9 / 4 * width, -width / 2)},
+                (1, 3): {"color": "darkblue", "pos": (-3 / 2 * width, -width)},
+                (1, 4): {"color": "darkblue", "pos": (-3 / 4 * width, -3 / 2 * width)},
+                (1, 5): {"color": "grey", "pos": (0, -2 * width)},
+                (2, 1): {"color": "darkblue", "pos": (-9 / 4 * width, width / 2)},
+                (2, 2): {"color": "white", "pos": (-3 / 2 * width, 0)},
+                (2, 3): {"color": "white", "pos": (-3 / 4 * width, -width / 2)},
+                (2, 4): {"color": "white", "pos": (0, -width)},
+                (2, 5): {"color": "darkblue", "pos": (3 / 4 * width, -3 / 2 * width)},
+                (3, 1): {"color": "darkblue", "pos": (-3 / 2 * width, width)},
+                (3, 2): {"color": "white", "pos": (-3 / 4 * width, width / 2)},
+                (3, 3): {"color": "grey", "pos": (0, 0)},
+                (3, 4): {"color": "white", "pos": (3 / 4 * width, -width / 2)},
+                (3, 5): {"color": "darkblue", "pos": (3 / 2 * width, -width)},
+                (4, 1): {"color": "darkblue", "pos": (-3 / 4 * width, 3 / 2 * width)},
+                (4, 2): {"color": "white", "pos": (0, width)},
+                (4, 3): {"color": "white", "pos": (3 / 4 * width, width / 2)},
+                (4, 4): {"color": "white", "pos": (3 / 2 * width, 0)},
+                (4, 5): {"color": "darkblue", "pos": (9 / 4 * width, -width / 2)},
+                (5, 1): {"color": "grey", "pos": (0, 2 * width)},
+                (5, 2): {"color": "darkblue", "pos": (3 / 4 * width, 3 / 2 * width)},
+                (5, 3): {"color": "darkblue", "pos": (3 / 2 * width, width)},
+                (5, 4): {"color": "darkblue", "pos": (9 / 4 * width, width / 2)},
+                (5, 5): {"color": "grey", "pos": (3 * width, 0)}
+            }
         self.reset()
 
     #Function to reset the board state (no pieces)
     def reset(self):
         self.pieces = []
+
         self.reserve = {"black": 6, "white": 6}
+
         self.current_player = "black"
+        self.dragging_piece = None
+        self.dragging_pos = None
 
 
+    #Function to place a piece
     def place_piece(self, tile, color):
         # Create a deep copy of the current game state
         new_state = copy.deepcopy(self)
@@ -33,10 +67,12 @@ class GameState:
 
         return new_state  # Return the updated game state
 
+    #Function to make a move (should be checked if it's valid before, not cheking here)
+    #Returns new state of the board
     def make_move(self, move):
         new_state = copy.deepcopy(self)
-
-        if type(move[0]) == str:
+        print(move)
+        if type(move[0])==str:
             _, piece_pos, new_tile = move  # piece_pos is (x, y) instead of an index
         else:
             piece_pos, new_tile = move
@@ -73,6 +109,7 @@ class GameState:
             return True
         return False
 
+    #Get valid plays for a player with a certain state of the board
     def get_valid_plays(self):
         valid_moves = []
 
@@ -87,59 +124,29 @@ class GameState:
 
         #Get Valid places
         if self.reserve[self.current_player]>0:
-            #for tile in tiles:
-            for i in range(1,6):
-                for j in range(1,6):
-                    if not self.is_tile_occupied((i, j)):
-                        valid_moves.append(("place", (i, j)))
+            for tile in self.tiles:
+                if not self.is_tile_occupied(tile):
+                    valid_moves.append(("place", tile))
 
         return valid_moves
 
-    # BOOLEAN: Check if a tile is occupied
+
+    #BOOLEAN: Check if a tile is occupied
     def is_tile_occupied(self, tile):
         for piece in self.pieces:
             if piece[0] == tile:
                 return True
         return False
 
-    #vasv
-        # returns a set of the movable places for a piece
+    #returns a set of the movable places for a piece
     def movable_places(self, piece_pos, piece_color):
-        possible_moves = set()
+        possible_moves=set()
 
         directions = [
             (0, 1), (0, -1),  # Vertical
             (1, 0), (-1, 0),  # Horizontal
             (1, -1), (-1, 1)  # Diagonal
         ]
-
-        tiles = {
-            (1, 1): {"color": "grey", "pos": (-3 * width, 0)},
-            (1, 2): {"color": "darkblue", "pos": (-9 / 4 * width, -width / 2)},
-            (1, 3): {"color": "darkblue", "pos": (-3 / 2 * width, -width)},
-            (1, 4): {"color": "darkblue", "pos": (-3 / 4 * width, -3 / 2 * width)},
-            (1, 5): {"color": "grey", "pos": (0, -2 * width)},
-            (2, 1): {"color": "darkblue", "pos": (-9 / 4 * width, width / 2)},
-            (2, 2): {"color": "white", "pos": (-3 / 2 * width, 0)},
-            (2, 3): {"color": "white", "pos": (-3 / 4 * width, -width / 2)},
-            (2, 4): {"color": "white", "pos": (0, -width)},
-            (2, 5): {"color": "darkblue", "pos": (3 / 4 * width, -3 / 2 * width)},
-            (3, 1): {"color": "darkblue", "pos": (-3 / 2 * width, width)},
-            (3, 2): {"color": "white", "pos": (-3 / 4 * width, width / 2)},
-            (3, 3): {"color": "grey", "pos": (0, 0)},
-            (3, 4): {"color": "white", "pos": (3 / 4 * width, -width / 2)},
-            (3, 5): {"color": "darkblue", "pos": (3 / 2 * width, -width)},
-            (4, 1): {"color": "darkblue", "pos": (-3 / 4 * width, 3 / 2 * width)},
-            (4, 2): {"color": "white", "pos": (0, width)},
-            (4, 3): {"color": "white", "pos": (3 / 4 * width, width / 2)},
-            (4, 4): {"color": "white", "pos": (3 / 2 * width, 0)},
-            (4, 5): {"color": "darkblue", "pos": (9 / 4 * width, -width / 2)},
-            (5, 1): {"color": "grey", "pos": (0, 2 * width)},
-            (5, 2): {"color": "darkblue", "pos": (3 / 4 * width, 3 / 2 * width)},
-            (5, 3): {"color": "darkblue", "pos": (3 / 2 * width, width)},
-            (5, 4): {"color": "darkblue", "pos": (9 / 4 * width, width / 2)},
-            (5, 5): {"color": "grey", "pos": (3 * width, 0)}
-        }
 
         original_color = piece_color
         if original_color == "black":
@@ -150,15 +157,13 @@ class GameState:
             while True:
                 x += dx
                 y += dy
-                if x<1 or x>5 or y<1 or y>5 or self.is_tile_occupied((x, y)):
+                if (x, y) not in self.tiles or self.is_tile_occupied((x, y)):
                     break
-                if tiles[(x, y)]["color"] != original_color:
+                if self.tiles[(x, y)]["color"] != original_color:
                     possible_moves.add((x, y))
                     break
                 possible_moves.add((x, y))
-
         return possible_moves
-
 
     def is_valid_move(self, original_position, expected_position):
         piece_color = None
@@ -172,6 +177,8 @@ class GameState:
         return expected_position in possible_moves
 
 
+    #Function to flip pieces. Does not check if the play was a movement. So it should be checked
+    #in the caller
     def flip_pieces(self, moved_to):
         directions = [
             (0, 1), (0, -1),  # Vertical
@@ -187,7 +194,7 @@ class GameState:
             while True:
                 x += dx
                 y += dy
-                if x<1 | x>5 | y<1 | y>5:
+                if (x, y) not in self.tiles:
                     break
                 found_piece = None
                 for i, piece in enumerate(self.pieces):
@@ -205,7 +212,6 @@ class GameState:
                 else:
                     break
 
-
     def get_piece_at(self, tile):
         for piece in self.pieces:
             if piece[0] == tile:
@@ -213,7 +219,7 @@ class GameState:
         return None
 
 
-    # Check lose function
+    #Check lose function
     def check_lose(self):
         directions = [
             (0, 1),  # Vertical
@@ -230,7 +236,7 @@ class GameState:
                 while True:
                     x += dx
                     y += dy
-                    if not(x<1 or x>5 or y<1 or y>5) and any(p[0] == (x, y) and p[1] == color for p in self.pieces):
+                    if (x, y) in self.tiles and any(p[0] == (x, y) and p[1] == color for p in self.pieces):
                         count += 1
                     else:
                         break
@@ -238,7 +244,7 @@ class GameState:
                 while True:
                     x -= dx
                     y -= dy
-                    if not(x<1 or x>5 or y<1 or y>5) and any(p[0] == (x, y) and p[1] == color for p in self.pieces):
+                    if (x, y) in self.tiles and any(p[0] == (x, y) and p[1] == color for p in self.pieces):
                         count += 1
                     else:
                         break
@@ -246,7 +252,8 @@ class GameState:
                     return color
         return None
 
-    # Check win does not check if the play was a movement, yet to implement
+
+    #Check win does not check if the play was a movement, yet to implement
     def check_win(self):
         directions = [
             (0, 1),  # Vertical
@@ -263,7 +270,7 @@ class GameState:
                 while True:
                     x += dx
                     y += dy
-                    if not(x<1 or x>5 or y<1 or y>5) and any(p[0] == (x, y) and p[1] == color for p in self.pieces):
+                    if (x, y) in self.tiles and any(p[0] == (x, y) and p[1] == color for p in self.pieces):
                         count += 1
                     else:
                         break
@@ -271,7 +278,7 @@ class GameState:
                 while True:
                     x -= dx
                     y -= dy
-                    if not(x<1 or x>5 or y<1 or y>5) and any(p[0] == (x, y) and p[1] == color for p in self.pieces):
+                    if (x, y) in self.tiles and any(p[0] == (x, y) and p[1] == color for p in self.pieces):
                         count += 1
                     else:
                         break
@@ -282,43 +289,38 @@ class GameState:
     def evaluate_board(self, last_play_was_movement):
         opponent = "white" if self.current_player == "black" else "black"
 
-        # Immediate losses (5 in a row) override any other score.
+        # Check immediate 5-in-a-row loss for either side (always triggers a loss).
         if self.check_lose() == self.current_player:
             return -10000
         elif self.check_lose() == opponent:
             return 10000
 
-        # Only consider wins if the last move was a movement.
+        # If the last move was a movement, check 4-in-a-row.
         if last_play_was_movement:
             if self.check_win() == self.current_player:
-                return 9000  # Win value; slightly less than immediate win to force blocking moves
+                return 10000
             elif self.check_win() == opponent:
-                return -9000
+                return -10000
 
         score = 0
 
-        # Threat detection: Check if the opponent can win in one move.
-        # (You might simulate each valid play for the opponent and check for an immediate win.)
-        for move in self.get_valid_plays():
-            if move[0] == "move":
-                # Simulate opponent's move if current player were opponent.
-                temp_state = copy.deepcopy(self)
-                temp_state.current_player = opponent
-                temp_state = temp_state.make_move(move)
-                if temp_state.check_win() == opponent:
-                    score -= 5000  # Large penalty if the opponent can force a win
-                    break
+        # Threat check: if the opponent has 3 in a row, subtract a huge penalty.
+        for (pos, color) in self.pieces:
+            if color == opponent:
+                align = self.count_alignment(pos, opponent)
+                if align >= 3:
+                    score -= 1000  # Large enough to force a block
 
-        # Alignment scoring: encourage your own alignments and penalize opponent's.
+        # Normal alignment scoring
         for (pos, color) in self.pieces:
             align = self.count_alignment(pos, color)
             if color == self.current_player:
                 score += align * 10
             else:
-                # A strong opponent alignment is even more dangerous.
-                score -= align * 20
+                # Heavier penalty for opponent alignments
+                score -= align * 15
 
-        # Mobility heuristic: more valid moves is generally better.
+        # Mobility difference
         player_moves = len(self.get_valid_plays())
         temp = self.current_player
         self.current_player = opponent
@@ -327,7 +329,6 @@ class GameState:
         score += (player_moves - opp_moves) * 5
 
         return score
-
 
     def count_alignment(self, position, player):
 
@@ -341,14 +342,14 @@ class GameState:
             x, y = position
 
             # Forward search
-            while not(x-dx<1 or x-dx>5 or y-dy<1 or y-dy>5) and any(p[0] == (x + dx, y + dy) and p[1] == player for p in self.pieces):
+            while (x + dx, y + dy) in self.tiles and any(p[0] == (x + dx, y + dy) and p[1] == player for p in self.pieces):
                 count += 1
                 x += dx
                 y += dy
 
             # Backward search
             x, y = position
-            while not(x-dx<1 or x-dx>5 or y-dy<1 or y-dy>5) and any(p[0] == (x - dx, y - dy) and p[1] == player for p in self.pieces):
+            while (x - dx, y - dy) in self.tiles and any(p[0] == (x - dx, y - dy) and p[1] == player for p in self.pieces):
                 count += 1
                 x -= dx
                 y -= dy

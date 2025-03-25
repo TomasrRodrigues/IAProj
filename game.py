@@ -223,14 +223,15 @@ def is_tile_occupied(tile):
 
 
 def movable_places(piece_pos, piece_color):
+    possible_moves=set()
     if piece_pos == (-1, -1):
-        possible_moves = set()
+        #possible_moves = set()
         for tile in tiles:
             if not is_tile_occupied(tile):
                 possible_moves.add(tile)
         return possible_moves
 
-    possible_moves = set()
+    #possible_moves = set()
     directions = [
         (0, 1), (0, -1),  # Vertical
         (1, 0), (-1, 0),  # Horizontal
