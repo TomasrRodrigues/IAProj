@@ -144,8 +144,40 @@ def choose_AI_screen():
                 elif event.key == pygame.K_4:
                     return
 
+
+def win_screen(winner):
+    """Display winning screen for 5 seconds."""
+    start_time = pygame.time.get_ticks()
+
+    while True:
+        # Check if 5 seconds have passed
+        if pygame.time.get_ticks() - start_time >= 5000:
+            return
+
+        # Handle window closure
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+
+        # Draw the screen
+        screen.fill("lightgoldenrod")
+        if winner is None:
+            draw_text("It's a draw!", (500, 300), font_large)
+        else:
+            draw_text(f"{winner.capitalize()} wins!", (500, 300), font_large)
+            draw_text("Returning to main menu in 5 seconds...", (450, 400), font_small)
+
+        pygame.display.flip()
+        pygame.time.Clock().tick(30)  # Cap at 30 FPS
+
+
 #Drawers for the game
-def drawBoard():
+def drawBoard(player):
+    if player=="black":
+        draw_text("Black Player Turn", (500,50), font_large, color=player)
+    else:
+        draw_text("White Player Turn", (500, 50), font_large, color=player)
     for tile in tiles:
         cur = tiles[tile]
         center = adjust_pos(cur["pos"], center_pos)
@@ -219,8 +251,13 @@ def getComputerMoveMinimax(depth):
     return best_move
 
 
-def getComputerMoveMonteCarlo(depth, num_simulations=100):
-    best_move = mcts_search(state)
+def getComputerMoveMonteCarlo(state, depth, ai_color, num_simulations=100):
+    best_move = mcts_search(
+        root_state=state,
+        iterations=num_simulations,
+        max_depth=depth,
+        ai_color=ai_color
+    )
     print("Monte Carlo best move:", best_move)
     return best_move
 
@@ -235,7 +272,7 @@ def game_loop(mode, AIMode):
     if mode =="pvp":
         while True:
             screen.fill("lightgoldenrod")
-            drawBoard()
+            drawBoard(state.current_player)
             drawWaitingPieces()
             drawPieces()
             pygame.display.flip()
@@ -297,18 +334,21 @@ def game_loop(mode, AIMode):
 
                     if loser is not None:
                         print(f"Loser: {loser}")
+                        winner = "black" if loser == "white" else "white"
+                        win_screen(winner)
                         return
                     if last_play_was_move:
                         winner = state.check_win()
                         if winner is not None:
                             print(f"Winner: {winner}")
+                            win_screen(winner)
                             return
                         last_play_was_move = False
 
     if mode == "pvc" and AIMode=="minimax":
         while True:
             screen.fill("lightgoldenrod")
-            drawBoard()
+            drawBoard(state.current_player)
             drawWaitingPieces()
             drawPieces()
             pygame.display.flip()
@@ -481,7 +521,7 @@ def game_loop(mode, AIMode):
             if state.current_player == "white":
                 print("I can get here")
 
-                best_move = getComputerMoveMonteCarlo(depth= 8)
+                best_move = getComputerMoveMonteCarlo(state, depth= 12, ai_color="white")
 
                 if best_move is not None:
                     if best_move[0] == "place":
