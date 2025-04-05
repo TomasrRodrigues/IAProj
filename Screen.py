@@ -5,7 +5,7 @@ from GameConstants import width, center_pos
 from GameTreeNode import GameTreeNode, GameTree
 from minimax import minimax
 from MonteCarlo import mcts_search
-from game import movable_places
+
 
 state = GameState()
 pygame.init()
@@ -212,7 +212,8 @@ def getComputerMoveMinimax(depth):
         alpha=float('-inf'),
         beta=float('inf'),
         maximizing_player=True,  # The computer (AI) plays as "white"
-        last_play_was_movement=False
+        last_play_was_movement=False,
+        ai_color="white"
     )
     print("Computer's best move:", best_move)
     return best_move
@@ -377,7 +378,7 @@ def game_loop(mode, AIMode):
                         return
                     last_play_was_move = False
 
-            if state.current_player == "white":
+            elif state.current_player == "white":
                 print("I can get here")
 
                 best_move = getComputerMoveMinimax(depth=4)

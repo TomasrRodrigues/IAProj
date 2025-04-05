@@ -266,47 +266,47 @@ class GameState:
                     return color
         return None
 
+    def evaluate_board(self, last_play_was_movement, ai_color):
+        ai_opponent = "black" if ai_color == "white" else "white"
 
-    def evaluate_board(self, last_play_was_movement):
-        opponent = "white" if self.current_player == "black" else "black"
-
-        # Immediate conditions: 5 in a row loss overrides everything.
-        if self.check_lose() == self.current_player:
+        # Immediate loss/win conditions
+        if self.check_lose() == ai_color:
             return -10000
-        elif self.check_lose() == opponent:
+        elif self.check_lose() == ai_opponent:
             return 10000
 
-        # Winning is only triggered by a movement.
+        # Check for win conditions (only after a movement)
         if last_play_was_movement:
-            if self.check_win() == self.current_player:
+            if self.check_win() == ai_color:
                 return 9000
-            elif self.check_win() == opponent:
+            elif self.check_win() == ai_opponent:
                 return -9000
 
         score = 0
 
-        # Threat check: if the opponent has 3 in a row, subtract a large penalty.
+        # Threat detection: opponent's 3+ alignment
         for (pos, color) in self.pieces:
-            if color == opponent:
-                align = self.count_alignment(pos, opponent)
+            if color == ai_opponent:
+                align = self.count_alignment(pos, ai_opponent)
                 if align >= 3:
                     score -= 1000
 
-        # Alignment scoring: reward our alignments, penalize opponent's.
+        # Alignment scoring
         for (pos, color) in self.pieces:
             align = self.count_alignment(pos, color)
-            if color == self.current_player:
+            if color == ai_color:
                 score += align * 10
             else:
                 score -= align * 15
 
-        # Mobility: difference in number of valid moves.
-        player_moves = len(self.get_valid_plays())
-        temp = self.current_player
-        self.current_player = opponent
-        opp_moves = len(self.get_valid_plays())
-        self.current_player = temp
-        score += (player_moves - opp_moves) * 5
+        # Mobility: compare AI's and opponent's valid moves
+        original_current = self.current_player
+        self.current_player = ai_color
+        ai_moves = len(self.get_valid_plays())
+        self.current_player = ai_opponent
+        opponent_moves = len(self.get_valid_plays())
+        self.current_player = original_current
+        score += (ai_moves - opponent_moves) * 5
 
         return score
 
