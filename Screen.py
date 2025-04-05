@@ -171,6 +171,58 @@ def win_screen(winner):
         pygame.display.flip()
         pygame.time.Clock().tick(30)  # Cap at 30 FPS
 
+def loss_AI_screen():
+    start_time = pygame.time.get_ticks()
+
+    while True:
+        # Check if 5 seconds have passed
+        if pygame.time.get_ticks() - start_time >= 5000:
+            return
+
+        # Handle window closure
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+
+        # Draw the screen
+        screen.fill("lightgoldenrod")
+
+
+        draw_text(f"You lost!", (500, 300), font_large)
+        draw_text(f"My AI was too strong!", (500, 300), font_small)
+
+        draw_text("Returning to main menu in 5 seconds...", (450, 400), font_small)
+
+        pygame.display.flip()
+        pygame.time.Clock().tick(30)  # Cap at 30 FPS
+
+
+def win_AI_screen():
+    start_time = pygame.time.get_ticks()
+
+    while True:
+        # Check if 5 seconds have passed
+        if pygame.time.get_ticks() - start_time >= 5000:
+            return
+
+        # Handle window closure
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+
+        # Draw the screen
+        screen.fill("lightgoldenrod")
+
+        draw_text(f"How is this possible? You defeated my AI", (300, 200), font_large)
+        draw_text(f"I will get you next time!", (500, 300), font_small)
+
+        draw_text("Returning to main menu in 5 seconds...", (450, 400), font_small)
+
+        pygame.display.flip()
+        pygame.time.Clock().tick(30)  # Cap at 30 FPS
+
 
 #Drawers for the game
 def drawBoard(player):
@@ -409,11 +461,17 @@ def game_loop(mode, AIMode):
                 # Check for win or loss conditions
                 loser = state.check_lose()
                 if loser is not None:
+                    if loser=="black":
+                        loss_AI_screen()
                     print(f"Loser: {loser}")
                     return
                 if last_play_was_move:
                     winner = state.check_win()
                     if winner is not None:
+                        if winner=="white":
+                            loss_AI_screen()
+                        else:
+                            win_AI_screen()
                         print(f"Winner: {winner}")
                         return
                     last_play_was_move = False
@@ -434,11 +492,17 @@ def game_loop(mode, AIMode):
 
                 loser = state.check_lose()
                 if loser is not None:
+                    if loser == "black":
+                        loss_AI_screen()
                     print(f"Loser: {loser}")
                     return
                 if last_play_was_move:
                     winner = state.check_win()
                     if winner is not None:
+                        if winner == "white":
+                            loss_AI_screen()
+                        else:
+                            win_AI_screen()
                         print(f"Winner: {winner}")
                         return
                     last_play_was_move = False
@@ -448,7 +512,7 @@ def game_loop(mode, AIMode):
     if mode == "pvc" and AIMode=="montecarlo":
         while True:
             screen.fill("lightgoldenrod")
-            drawBoard()
+            drawBoard(state.current_player)
             drawWaitingPieces()
             drawPieces()
             pygame.display.flip()
@@ -509,11 +573,17 @@ def game_loop(mode, AIMode):
                 # Check for win or loss conditions
                 loser = state.check_lose()
                 if loser is not None:
+                    if loser == "black":
+                        loss_AI_screen()
                     print(f"Loser: {loser}")
                     return
                 if last_play_was_move:
                     winner = state.check_win()
                     if winner is not None:
+                        if winner == "white":
+                            loss_AI_screen()
+                        else:
+                            win_AI_screen()
                         print(f"Winner: {winner}")
                         return
                     last_play_was_move = False
@@ -534,11 +604,17 @@ def game_loop(mode, AIMode):
 
                 loser = state.check_lose()
                 if loser is not None:
+                    if loser == "black":
+                        loss_AI_screen()
                     print(f"Loser: {loser}")
                     return
                 if last_play_was_move:
                     winner = state.check_win()
                     if winner is not None:
+                        if winner == "white":
+                            loss_AI_screen()
+                        else:
+                            win_AI_screen()
                         print(f"Winner: {winner}")
                         return
                     last_play_was_move = False
