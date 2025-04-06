@@ -3,10 +3,24 @@ from GameState import GameState
 
 
 def minimax(state, depth, alpha, beta, maximizing_player, last_play, ai_color):
+    """Minimax algorithm with alpha-beta pruning for adversarial search.
+
+        Args:
+            state: Current GameState object
+            depth: Search depth remaining
+            alpha: Alpha value for pruning
+            beta: Beta value for pruning
+            maximizing_player: True if current player is maximizing
+            last_play: Previous move made
+            ai_color: Color of the AI player ('black' or 'white')
+
+        Returns:
+            tuple: (best_value, best_move) for current node
+        """
+
     # Base case: depth limit or terminal state
     if depth == 0 or state.is_game_over(last_play):
         # Calculate evaluation score using last play type
-        #last_was_move = last_play[0] == 'move' if last_play else False
         return state.evaluate_board(last_play, ai_color), None
 
     best_move = None

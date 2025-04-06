@@ -14,6 +14,10 @@ pygame.display.set_caption("Yonmoque-Hex Game")
 font_small = pygame.font.Font(None, 32)
 font_large = pygame.font.Font(None, 48)
 
+# Hexagonal board tile configuration (position and color)
+# Tile positions and colors defined in a 5x5 grid
+    # Format: (x,y): {"color": <color>, "pos": (calculated_position)}
+    # ... (tile definitions remain unchanged)
 tiles =  {
                 (1, 1): {"color": "grey", "pos": (-3 * width, 0)},
                 (1, 2): {"color": "darkblue", "pos": (-9 / 4 * width, -width / 2)},
@@ -55,6 +59,7 @@ def draw_text(text, pos, font, color="black"):
 
 #Screens (missing win screen and choose AI and difficulty)
 def home_screen():
+    """Display main menu with game options"""
     while True:
         screen.fill("lightgoldenrod")
         draw_text("Yonmoque-Hex Game", (500, 150), font_large)
@@ -77,6 +82,7 @@ def home_screen():
                     exit()
 
 def choose_game_screen():
+    """Display game mode selection screen"""
     while True:
         screen.fill("lightgoldenrod")
         draw_text("Choose your game mode", (500, 150), font_large)
@@ -104,6 +110,7 @@ def choose_game_screen():
                     return "back"
 
 def instructions_screen():
+    """Display game rules and instructions"""
     while True:
         screen.fill("lightgrey")
         draw_text("Instructions:", (550, 150), font_large)
@@ -254,6 +261,7 @@ def win_AI_screen():
 
 #Drawers for the game
 def drawBoard(player):
+    """Render the hexagonal game board and current player indicator"""
     if player=="black":
         draw_text("Black Player Turn", (500,50), font_large, color=player)
     else:
@@ -330,6 +338,7 @@ def drawHelpButtons():
     return minimax_button_rect, montecarlo_button_rect  # Return rects for click detection
 
 def drawPieces():
+    """Render all game pieces on the board"""
     for piece in state.pieces:
         #if piece[0] == (-1, -1):
         #    continue
@@ -339,6 +348,7 @@ def drawPieces():
         pygame.draw.circle(screen, "black", pos, width / 4, 1)
 
 def getComputerMoveMinimax(depth, ai_color="white"):
+    """Get AI move using Minimax algorithm"""
     best_value, best_move = minimax(
         state,
         depth=depth,  # Set appropriate depth for the AI
@@ -363,6 +373,13 @@ def getComputerMoveMonteCarlo(state, depth, ai_color, num_simulations=250):
     return best_move
 
 def game_loop(mode, AIMode, difficulty=None, num_simulations=None):
+    """Main game loop handling different play modes
+        Args:
+            mode: pvp (Player vs Player), pvc (Player vs Computer), cvc (Computer vs Computer)
+            AIMode: 'minimax' or 'montecarlo'
+            difficulty: AI difficulty level
+            num_simulations: Number of MCTS simulations
+        """
     global state
     state.reset()
     selected_piece = None  # selected piece to move (if is not None, selected_outside must be)

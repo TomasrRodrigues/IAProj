@@ -5,21 +5,24 @@ import copy
 width=GameConstants.width
 
 class GameState:
+    """Maintains the game state incuding piece positions, valid moves and game rules"""
     def __init__(self):
+        """Initialize a new game state with default values"""
         self.reset()
 
     #Function to reset the board state (no pieces)
     def reset(self):
+        """Reset the game:
+            - Empty board
+            - Full Reserves
+            - Black player starts"""
         self.pieces = []
         self.reserve = {"black": 6, "white": 6}
         self.current_player = "black"
         self.occupied = set(tile for tile, _ in self.pieces)
 
     def copy_state(self):
-        """
-        Create a new GameState with only the mutable parts (pieces, reserve, current_player)
-        copied. (Tiles are assumed to be defined globally.)
-        """
+        """Create a lightweight copy of the game state"""
         new_state = GameState.__new__(GameState)  # create instance without calling __init__
         new_state.pieces = self.pieces.copy()
         new_state.reserve = self.reserve.copy()
@@ -28,6 +31,13 @@ class GameState:
         return new_state
 
     def place_piece(self, tile, color):
+        """Place a new piece from reserves onto the board.
+                Args:
+                    tile: (x,y) position to place
+                    color: Player color making placement
+                Returns:
+                    GameState: New state with updated piece positions
+                """
         # Create a deep copy of the current game state
         #new_state = copy.deepcopy(self)
 
@@ -48,6 +58,12 @@ class GameState:
         return new_state  # Return the updated game state
 
     def make_move(self, move):
+        """Move an existing piece to a new position and handle piece flipping.
+                Args:
+                    move: Tuple containing move type and positions
+                Returns:
+                    GameState: New state with updated piece positions
+                """
         new_state = self.copy_state()
 
         if type(move[0]) == str:
@@ -78,6 +94,12 @@ class GameState:
         return new_state
 
     def is_game_over(self, play=None):
+        """Check terminal game conditions.
+                Args:
+                    play: Last move made (for win condition check)
+                Returns:
+                    bool: True if game should end
+                """
         # Always check loss condition (5-in-a-row)
         if self.check_lose() is not None:
             return True
@@ -89,6 +111,11 @@ class GameState:
         return False
 
     def get_valid_plays(self):
+        """Generate all legal moves for current player.
+                Returns:
+                    list: Valid moves in format [('move', from_pos, to_pos), ...]
+                          or [('place', (x,y)), ...]
+                """
         valid_moves = []
 
         for (piece_pos, piece_color) in self.pieces:
@@ -113,6 +140,13 @@ class GameState:
 
     # returns a set of the movable places for a piece
     def movable_places(self, piece_pos, piece_color):
+        """Calculate all valid destinations for a piece.
+                Args:
+                    piece_pos: Current (x,y) position
+                    piece_color: Color of the piece
+                Returns:
+                    set: Valid destination coordinates
+                """
         possible_moves = set()
         directions = [
             (0, 1), (0, -1),  # Vertical
@@ -164,6 +198,10 @@ class GameState:
 
 
     def flip_pieces(self, moved_to):
+        """Flip opponent pieces between moved piece and allies.
+                Args:
+                    moved_to: Destination position of moved piece
+                """
         directions = [
             (0, 1), (0, -1),  # Vertical
             (1, 0), (-1, 0),  # Horizontal
@@ -208,6 +246,10 @@ class GameState:
 
     # Check lose function
     def check_lose(self):
+        """Check for 5-in-a-row loss condition.
+                Returns:
+                    str/None: Losing color if found, else None
+                """
         directions = [
             (0, 1),  # Vertical
             (1, 0),  # Horizontal
@@ -240,7 +282,12 @@ class GameState:
 
     # Check win does not check if the play was a movement, yet to implement
     def check_win(self, play=None):
-        """Check if the SPECIFIC MOVE created a 4-in-a-row."""
+        """Check if last move created a 4-in-a-row win.
+        Args:
+            play: Move action to check
+        Returns:
+            str/None: Winning color if found, else None
+        """
         if not play or play[0] != "move":
             return None  # Only check moves, not placements
 
@@ -281,6 +328,13 @@ class GameState:
 
 
     def evaluate_board(self, play, ai_color):
+        """Heuristic evaluation function for AI decision-making.
+                Scoring considers:
+                - Immediate win/loss conditions
+                - Threat detection (opponent alignment)
+                - Current piece alignment strength
+                - Mobility advantage
+                """
         ai_opponent = "black" if ai_color == "white" else "white"
 
         # Immediate loss/win conditions
@@ -332,6 +386,13 @@ class GameState:
 
 
     def count_alignment(self, position, player):
+        """Calculate alignment strength for scoring.
+                Args:
+                    pos: Starting position (x,y)
+                    player: Color to evaluate
+                Returns:
+                    int: Alignment score for this position
+                """
         directions = [(0, 1), (1, 0), (1, -1)]
         total = 0
         for dx, dy in directions:

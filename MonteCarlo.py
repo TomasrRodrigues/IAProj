@@ -3,7 +3,16 @@ import random
 from GameState import GameState
 
 class MCTSNode:
+    """Represents a node in the MCTS (Monte Carlo Tree Search)"""
     def __init__(self, state, move=None, parent=None, last_move=None):
+        """Initialize MCTS node with game state and metadata
+
+        Args:
+            state: Current game state
+            move: Move that led to this state
+            parent: Parent node in MCTS tree
+            last_move: Last move that led to this state
+        """
         self.state = state                # The game state at this node.
         self.move = move                  # The move that led to this state.
         self.parent = parent              # Parent node.
@@ -14,10 +23,14 @@ class MCTSNode:
         self.untried_moves = state.get_valid_plays()  # All valid moves from this state.
 
     def is_fully_expanded(self):
+        """Check if all possible moves have been explored from this node."""
         return len(self.untried_moves) == 0
 
     def best_child(self, c_param=math.sqrt(2)):
-        # UCT selection: exploitation + exploration term.
+        """Select child node using Upper Confidence Bound for Trees (UCT) formula.
+
+                Balances exploitation (high reward) vs exploration (under-visited nodes)
+                """
         choices_weights = [
             (child.total_reward / child.visits) + c_param * math.sqrt(math.log(self.visits) / child.visits)
             for child in self.children
@@ -25,7 +38,8 @@ class MCTSNode:
         return self.children[choices_weights.index(max(choices_weights))]
 
     def expand(self):
-        # Choose a random move from the untried moves.
+        """Create new child node by trying an unexplored move."""
+        #select random untried move
         move = self.untried_moves.pop(random.randrange(len(self.untried_moves)))
         new_state = self.state.copy_state()
 
@@ -44,22 +58,24 @@ class MCTSNode:
         return child_node
 
     def update(self, reward):
+        """Update node statistics after simulation."""
         self.visits += 1
         self.total_reward += reward
 
 def choose_move(state, ai_color):
-    """
-    Choose a move using a heuristic that:
-      - If enough pieces are on the board (>= 4), first checks for immediate winning or blocking moves.
-      - Otherwise, or if no immediate moves exist, uses an evaluation function:
-        - If it's the AI's turn, chooses the move with the highest evaluation.
-        - If it's the opponent's turn, chooses the move with the lowest evaluation.
+    """Select move using heuristic strategy combining immediate win checks and evaluation.
+
+    Strategy:
+    1. Check for immediate winning/blocking moves when board has >=4 pieces
+    2. Fallback to evaluation function for other cases:
+       - Maximizes score for AI player
+       - Minimizes score for opponent
     """
     valid_moves = state.get_valid_plays()
     if not valid_moves:
         return None
 
-    # Only check for immediate wins/blocks if enough pieces are on board.
+    # Immediate win/block check
     if len(state.pieces) >= 4:
         for move in valid_moves:
             new_state = state.copy_state()
@@ -76,7 +92,7 @@ def choose_move(state, ai_color):
                 elif new_state.check_win(move) is not None:
                     return move
 
-    # Fall back to a heuristic evaluation if no immediate win/block is found or if board is too empty.
+    #Heuristic evaluation fallback
     if state.current_player == ai_color:
         best_move = None
         best_score = -float('inf')
@@ -109,10 +125,16 @@ def choose_move(state, ai_color):
     return best_move if best_move is not None else random.choice(valid_moves)
 
 def heuristic_rollout(state, rollout_depth, ai_color, last_move=None):
-    """
-    Run a rollout using a heuristic rollout policy.
-    At each step, if an immediate win is available for either side and enough pieces are on board,
-    it is taken. Otherwise, choose_move is used.
+    """Simulate game from current state using heuristic policy.
+
+    Args:
+        state: Starting game state
+        rollout_depth: Maximum moves to simulate
+        ai_color: AI's color for evaluation
+        last_move: Move that led to current state
+
+    Returns:
+        Final heuristic evaluation of simulated game state
     """
     current_state = state.copy_state()
     rollout_last_move = last_move
@@ -138,9 +160,16 @@ def heuristic_rollout(state, rollout_depth, ai_color, last_move=None):
     return current_state.evaluate_board(rollout_last_move, ai_color)
 
 def montecarlo(state, num_simulations, rollout_depth, ai_color):
-    """
-    Perform Monte Carlo Tree Search starting from 'state' using num_simulations and
-    rollouts of depth 'rollout_depth'. The ai_color parameter is used in evaluation.
+    """Execute Monte Carlo Tree Search algorithm.
+
+    Process:
+    1. Selection: Traverse tree using UCT
+    2. Expansion: Add new node if possible
+    3. Simulation: Rollout game from expanded node
+    4. Backpropagation: Update node statistics
+
+    Returns:
+        Best move found through MCTS process
     """
     root_node = MCTSNode(state, last_move=None)
 
