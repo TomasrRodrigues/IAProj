@@ -1,5 +1,6 @@
 import pygame
 import sys
+import time
 from GameState import GameState
 from GameConstants import width, center_pos
 from GameTreeNode import GameTreeNode, GameTree
@@ -369,6 +370,7 @@ def game_loop(mode, AIMode, difficulty=None, num_simulations=None):
     selected_tile = None  # selected tile to place or move
     selected_outside = None  # if it is selected outside (to place)
     last_play_was_move = False
+    ai_times=[]
 
     if mode =="pvp":
         while True:
@@ -486,7 +488,7 @@ def game_loop(mode, AIMode, difficulty=None, num_simulations=None):
             elif difficulty == "intermediate":
                 depth = 3
             else:
-                depth = 5
+                depth = 4
             while True:
 
                 screen.fill("lightgoldenrod")
@@ -569,6 +571,9 @@ def game_loop(mode, AIMode, difficulty=None, num_simulations=None):
                                             # Check for win or loss conditions
                                             if state.is_game_over(play):
                                                 loser = state.check_lose()
+                                                print(
+                                                    f"Minimax with difficulty {difficulty} Average move time: {sum(ai_times) / len(ai_times)}")
+                                                print(f"AiMoves: {len(ai_times)}")
                                                 if loser:
                                                     winner = "white" if loser == "black" else "black"
                                                     win_screen(winner)
@@ -590,9 +595,11 @@ def game_loop(mode, AIMode, difficulty=None, num_simulations=None):
 
                 elif state.current_player == "white":
                     print("I can get here")
-
+                    start_time = time.time()
                     best_move = getComputerMoveMinimax(depth=depth)
-
+                    move_time=time.time()-start_time
+                    ai_times.append(move_time)
+                    print(f"Minimax with difficulty {difficulty}: {move_time}")
                     if best_move is not None:
                         if best_move[0] == "place":
                             state = state.place_piece(best_move[1], "white")
@@ -605,14 +612,18 @@ def game_loop(mode, AIMode, difficulty=None, num_simulations=None):
                     play=best_move
                     if state.is_game_over(play):
                         loser = state.check_lose()
+                        print(f"Minimax with difficulty {difficulty} Average move time: {sum(ai_times) / len(ai_times)}")
+                        print(f"AiMoves: {len(ai_times)}")
                         if loser:
                             winner = "black" if loser == "white" else "white"
                             win_screen(winner)
+                            #print(f"Average time: {sum(ai_times) / len(ai_times)}")
                             return
                         else:
                             winner = state.check_win(play)
                             if winner:
                                 win_screen(winner)
+                                #print(f"Average time: {sum(ai_times) / len(ai_times)}")
                                 return
 
         if AIMode=="montecarlo":
@@ -702,6 +713,9 @@ def game_loop(mode, AIMode, difficulty=None, num_simulations=None):
 
                                             if state.is_game_over(play):
                                                 loser = state.check_lose()
+                                                print(
+                                                    f"Montecarlo with difficulty {difficulty} Average move time: {sum(ai_times) / len(ai_times)}")
+                                                print(f"AiMoves: {len(ai_times)}")
                                                 if loser:
                                                     winner = "white" if loser == "black" else "black"
                                                     win_screen(winner)
@@ -739,9 +753,11 @@ def game_loop(mode, AIMode, difficulty=None, num_simulations=None):
 
                 elif state.current_player == "white":
                     print("I can get here")
-
+                    start_time = time.time()
                     best_move = getComputerMoveMonteCarlo(state, depth= depth, ai_color="white", num_simulations=num_simulations)
-
+                    move_time = time.time() - start_time
+                    ai_times.append(move_time)
+                    print(f"Montecarlo with difficulty {difficulty}: {move_time}")
                     if best_move is not None:
                         if best_move[0] == "place":
                             state = state.place_piece(best_move[1], "white")
@@ -754,6 +770,9 @@ def game_loop(mode, AIMode, difficulty=None, num_simulations=None):
                     play=best_move
                     if state.is_game_over(play):
                         loser = state.check_lose()
+                        print(
+                            f"Montecarlo with difficulty {difficulty} Average move time: {sum(ai_times) / len(ai_times)}")
+                        print(f"AiMoves: {len(ai_times)}")
                         if loser:
                             winner = "black" if loser == "white" else "white"
                             win_screen(winner)
@@ -830,6 +849,9 @@ def game_loop(mode, AIMode, difficulty=None, num_simulations=None):
                 state.current_player = "black"
 
             pygame.time.wait(500)
+
+
+    print(f"Average time: {sum(ai_times)/len(ai_times)}")
 
 
 if __name__ == '__main__':

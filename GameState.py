@@ -338,16 +338,28 @@ class GameState:
             count = 1
             x, y = position
 
-            while not (x + dx < 1 or x + dx > 5 or y + dy < 1 or y + dy > 5) and any(p[0] == (x + dx, y + dy) and p[1] == player for p in self.pieces):
-                count += 1
+            # Check positive direction
+            while True:
                 x += dx
                 y += dy
+                if not (1 <= x <= 5 and 1 <= y <= 5):
+                    break
+                if any(p[0] == (x, y) and p[1] == player for p in self.pieces):
+                    count += 1
+                else:
+                    break
 
+            # Check negative direction
             x, y = position
-            while not (x - dx < 1 or x - dx > 5 or y - dy < 1 or y - dy > 5) and any(p[0] == (x - dx, y - dy) and p[1] == player for p in self.pieces):
-                count += 1
+            while True:
                 x -= dx
                 y -= dy
+                if not (1 <= x <= 5 and 1 <= y <= 5):
+                    break
+                if any(p[0] == (x, y) and p[1] == player for p in self.pieces):
+                    count += 1
+                else:
+                    break
 
             if count == 3:
                 total += 5

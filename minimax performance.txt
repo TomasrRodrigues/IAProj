@@ -1,0 +1,44 @@
+
+------------------------------Minimax-------------------------------
+
+
+Minimax with difficulty easy Average move time: 0.06009534001350403
+AiMoves: 8
+Minimax with difficulty easy Average move time: 0.03914761543273926
+AiMoves: 4
+Minimax with difficulty easy Average move time: 0.07183456420898438
+AiMoves: 13
+Minimax with difficulty easy Average move time: 0.06241276264190674
+AiMoves: 10
+Minimax with difficulty easy Average move time: 0.05282795429229736
+AiMoves: 6
+
+
+
+Minimax with difficulty intermediate Average move time: 0.5774877667427063
+AiMoves: 4
+Minimax with difficulty intermediate Average move time: 0.5829207003116608
+AiMoves: 8
+Minimax with difficulty intermediate Average move time: 0.9118677207401821
+AiMoves: 7
+Minimax with difficulty intermediate Average move time: 0.6257188320159912
+AiMoves: 6
+Minimax with difficulty intermediate Average move time: 0.5707847731454032
+AiMoves: 7
+Minimax with difficulty intermediate Average move time: 0.9317975044250488
+AiMoves: 8
+Minimax with difficulty intermediate Average move time: 0.8068138599395752
+AiMoves: 5
+
+
+
+Minimax with difficulty hard Average move time: 9.647094351904732
+AiMoves: 7
+Minimax with difficulty hard Average move time: 4.875545835494995
+AiMoves: 5
+Minimax with difficulty hard Average move time: 11.595733404159546
+AiMoves: 7
+Minimax with difficulty hard Average move time: 9.181346707873875
+AiMoves: 9
+Minimax with difficulty hard Average move time: 9.8015576004982
+AiMoves: 4
