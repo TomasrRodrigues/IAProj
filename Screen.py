@@ -296,7 +296,7 @@ def getComputerMoveMinimax(depth):
         alpha=float('-inf'),
         beta=float('inf'),
         maximizing_player=True,  # The computer (AI) plays as "white"
-        last_play_was_movement=False,
+        last_play=None,
         ai_color="white"
     )
     print("Computer's best move:", best_move)
@@ -358,6 +358,15 @@ def game_loop(mode, AIMode):
                                     # If it was selected outside before place it
                                     if selected_outside is not None:
                                         state = state.place_piece(tile, selected_outside)
+                                        play = ("place", tile)  # Corrected play type
+
+                                        # Check for loss only
+                                        print(state.is_game_over(play))
+                                        if state.is_game_over(play):
+                                            loser = state.check_lose()
+                                            winner = "black" if loser == "white" else "white"
+                                            win_screen(winner)
+                                            return
                                         state.current_player = "white" if state.current_player == "black" else "black"
                                         selected_piece = None
                                         selected_tile = None
@@ -368,6 +377,18 @@ def game_loop(mode, AIMode):
                                             print("Not a valid move")
                                             continue
                                         state = state.make_move((selected_piece, tile))
+                                        play = ("move", selected_piece, tile)  # Corrected play type
+
+                                        # Check for win/loss
+                                        print(state.is_game_over(play))
+                                        if state.is_game_over(play):
+                                            loser = state.check_lose()
+                                            if loser:  # Loss has priority
+                                                winner = "black" if loser == "white" else "white"
+                                            else:
+                                                winner = state.check_win(play)
+                                            win_screen(winner)
+                                            return
                                         state.current_player = "white" if state.current_player == "black" else "black"
                                         selected_piece = None
                                         selected_tile = None
@@ -382,20 +403,6 @@ def game_loop(mode, AIMode):
                                             selected_tile = None
                                             selected_outside = None
 
-                    loser = state.check_lose()
-
-                    if loser is not None:
-                        print(f"Loser: {loser}")
-                        winner = "black" if loser == "white" else "white"
-                        win_screen(winner)
-                        return
-                    if last_play_was_move:
-                        winner = state.check_win()
-                        if winner is not None:
-                            print(f"Winner: {winner}")
-                            win_screen(winner)
-                            return
-                        last_play_was_move = False
 
     if mode == "pvc" and AIMode=="minimax":
         while True:
@@ -435,6 +442,7 @@ def game_loop(mode, AIMode):
                                     if not state.is_tile_occupied(tile):  # If the tile is not occupied
                                         if selected_outside is not None:
                                             state = state.place_piece(tile, selected_outside)
+                                            play = ("place", tile)
                                             state.current_player = "white"
                                             selected_piece = None
                                             selected_tile = None
@@ -444,12 +452,27 @@ def game_loop(mode, AIMode):
                                             if tile not in mov_places:
                                                 print("Not a valid move")
                                                 continue
+                                            play = ("move", selected_piece, tile)
                                             state = state.make_move((selected_piece, tile))
                                             state.current_player = "white"
                                             selected_piece = None
                                             selected_tile = None
                                             selected_outside = None
                                             last_play_was_move = True
+
+                                        # Check for win or loss conditions
+                                        if state.is_game_over(play):
+                                            loser = state.check_lose()
+                                            if loser:
+                                                winner = "white" if loser == "black" else "black"
+                                                win_screen(winner)
+                                                return
+                                            else:
+                                                winner = state.check_win(play)
+                                                if winner:
+                                                    win_screen(winner)
+                                                    return
+
                                     else:
                                         piece_at_the_tile = state.get_piece_at(tile)
                                         if piece_at_the_tile is not None:
@@ -458,23 +481,6 @@ def game_loop(mode, AIMode):
                                                 selected_tile = None
                                                 selected_outside = None
 
-                # Check for win or loss conditions
-                loser = state.check_lose()
-                if loser is not None:
-                    if loser=="black":
-                        loss_AI_screen()
-                    print(f"Loser: {loser}")
-                    return
-                if last_play_was_move:
-                    winner = state.check_win()
-                    if winner is not None:
-                        if winner=="white":
-                            loss_AI_screen()
-                        else:
-                            win_AI_screen()
-                        print(f"Winner: {winner}")
-                        return
-                    last_play_was_move = False
 
             elif state.current_player == "white":
                 print("I can get here")
@@ -490,24 +496,19 @@ def game_loop(mode, AIMode):
                         last_play_was_move=True
                 state.current_player = "black"
 
-                loser = state.check_lose()
-                if loser is not None:
-                    if loser == "black":
-                        loss_AI_screen()
-                    print(f"Loser: {loser}")
-                    return
-                if last_play_was_move:
-                    winner = state.check_win()
-                    if winner is not None:
-                        if winner == "white":
-                            loss_AI_screen()
-                        else:
-                            win_AI_screen()
-                        print(f"Winner: {winner}")
+                play=best_move
+                if state.is_game_over(play):
+                    loser = state.check_lose()
+                    if loser:
+                        winner = "black" if loser == "white" else "white"
+                        win_screen(winner)
                         return
-                    last_play_was_move = False
+                    else:
+                        winner = state.check_win(play)
+                        if winner:
+                            win_screen(winner)
+                            return
 
-                pygame.time.wait(1000)
 
     if mode == "pvc" and AIMode=="montecarlo":
         while True:
@@ -546,6 +547,7 @@ def game_loop(mode, AIMode):
                                 if ((mouse_x - center[0]) ** 2 + (mouse_y - center[1]) ** 2) ** 0.5 <= width / 2:
                                     if not state.is_tile_occupied(tile):  # If the tile is not occupied
                                         if selected_outside is not None:
+                                            play = ("place", tile)
                                             state = state.place_piece(tile, selected_outside)
                                             state.current_player = "white"
                                             selected_piece = None
@@ -556,12 +558,25 @@ def game_loop(mode, AIMode):
                                             if tile not in mov_places:
                                                 print("Not a valid move")
                                                 continue
+                                            play = ("move", selected_piece, tile)
                                             state = state.make_move((selected_piece, tile))
                                             state.current_player = "white"
                                             selected_piece = None
                                             selected_tile = None
                                             selected_outside = None
                                             last_play_was_move = True
+
+                                        if state.is_game_over(play):
+                                            loser = state.check_lose()
+                                            if loser:
+                                                winner = "white" if loser == "black" else "black"
+                                                win_screen(winner)
+                                                return
+                                            else:
+                                                winner = state.check_win(play)
+                                                if winner:
+                                                    win_screen(winner)
+                                                    return
                                     else:
                                         piece_at_the_tile = state.get_piece_at(tile)
                                         if piece_at_the_tile is not None:
@@ -600,26 +615,22 @@ def game_loop(mode, AIMode):
                     else:
                         state = state.make_move(best_move)
                         last_play_was_move=True
-                state.current_player = "black"
 
-                loser = state.check_lose()
-                if loser is not None:
-                    if loser == "black":
-                        loss_AI_screen()
-                    print(f"Loser: {loser}")
-                    return
-                if last_play_was_move:
-                    winner = state.check_win()
-                    if winner is not None:
-                        if winner == "white":
-                            loss_AI_screen()
-                        else:
-                            win_AI_screen()
-                        print(f"Winner: {winner}")
+
+                play=best_move
+                if state.is_game_over(play):
+                    loser = state.check_lose()
+                    if loser:
+                        winner = "black" if loser == "white" else "white"
+                        win_screen(winner)
                         return
-                    last_play_was_move = False
-
-                pygame.time.wait(1000)
+                    else:
+                        winner = state.check_win(play)
+                        if winner:
+                            win_screen(winner)
+                            return
+                state.current_player = "black"
+                pygame.time.wait(500)
 
 
 if __name__ == '__main__':

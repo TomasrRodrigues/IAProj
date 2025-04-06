@@ -77,11 +77,15 @@ class GameState:
         new_state.flip_pieces(new_tile)
         return new_state
 
-    def is_game_over(self, last_play_was_movement):
-        if self.check_lose() is not None:  # If someone lost, the game is over
+    def is_game_over(self, play=None):
+        # Always check loss condition (5-in-a-row)
+        if self.check_lose() is not None:
             return True
-        if last_play_was_movement and self.check_win() is not None:  # Winning only happens after a move
-            return True
+
+        # Only check win condition for moves
+        if play and play[0] == "move":
+            return self.check_win(play) is not None
+
         return False
 
     def get_valid_plays(self):
@@ -235,36 +239,46 @@ class GameState:
         return None
 
     # Check win does not check if the play was a movement, yet to implement
-    def check_win(self):
-        directions = [
-            (0, 1),  # Vertical
-            (1, 0),  # Horizontal
-            (1, -1)  # Diagonal
-        ]
-        for (pos, color) in self.pieces:
-            if pos == (-1, -1):
-                continue
-            for dx, dy in directions:
-                count = 1
-                x, y = pos
-                while True:
-                    x += dx
-                    y += dy
-                    if 1 <= x <= 5 and 1 <= y <= 5 and any(p[0] == (x, y) and p[1] == color for p in self.pieces):
-                        count += 1
-                    else:
-                        break
-                x, y = pos
-                while True:
-                    x -= dx
-                    y -= dy
-                    if 1 <= x <= 5 and 1 <= y <= 5 and any(p[0] == (x, y) and p[1] == color for p in self.pieces):
-                        count += 1
-                    else:
-                        break
-                if count == 4:
-                    return color
+    def check_win(self, play=None):
+        """Check if the SPECIFIC MOVE created a 4-in-a-row."""
+        if not play or play[0] != "move":
+            return None  # Only check moves, not placements
+
+        # Get moved piece's final position and color
+        _, initial_pos, dest_pos = play
+        color = self.get_piece_at(dest_pos)[1]
+
+        directions = [(0, 1), (1, 0), (1, -1)]  # Vertical, Horizontal, Diagonal
+
+        for dx, dy in directions:
+            count = 1
+            x, y = dest_pos
+
+            # Check in positive direction
+            while True:
+                x += dx
+                y += dy
+                if (1 <= x <= 5 and 1 <= y <= 5 and
+                        any(p[0] == (x, y) and p[1] == color for p in self.pieces)):
+                    count += 1
+                else:
+                    break
+
+            # Check in negative direction
+            x, y = dest_pos
+            while True:
+                x -= dx
+                y -= dy
+                if (1 <= x <= 5 and 1 <= y <= 5 and
+                        any(p[0] == (x, y) and p[1] == color for p in self.pieces)):
+                    count += 1
+                else:
+                    break
+
+            if count == 4:
+                return color
         return None
+
 
     def evaluate_board(self, last_play_was_movement, ai_color):
         ai_opponent = "black" if ai_color == "white" else "white"
