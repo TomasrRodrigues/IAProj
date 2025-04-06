@@ -304,7 +304,7 @@ def getComputerMoveMinimax(depth, ai_color="white"):
     return best_move
 
 
-def getComputerMoveMonteCarlo(state, depth, ai_color, num_simulations=100):
+def getComputerMoveMonteCarlo(state, depth, ai_color, num_simulations=500):
     best_move = montecarlo(
         state=state,
         depth=depth,
