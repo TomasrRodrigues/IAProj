@@ -6,8 +6,8 @@ def minimax(state, depth, alpha, beta, maximizing_player, last_play, ai_color):
     # Base case: depth limit or terminal state
     if depth == 0 or state.is_game_over(last_play):
         # Calculate evaluation score using last play type
-        last_was_move = last_play[0] == 'move' if last_play else False
-        return state.evaluate_board(last_was_move, ai_color), None
+        #last_was_move = last_play[0] == 'move' if last_play else False
+        return state.evaluate_board(last_play, ai_color), None
 
     best_move = None
 

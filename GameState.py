@@ -279,21 +279,22 @@ class GameState:
                 return color
         return None
 
-
-    def evaluate_board(self, last_play_was_movement, ai_color):
+    def evaluate_board(self, play, ai_color):
         ai_opponent = "black" if ai_color == "white" else "white"
 
         # Immediate loss/win conditions
-        if self.check_lose() == ai_color:
+        lose_result = self.check_lose()
+        if lose_result == ai_color:
             return -10000
-        elif self.check_lose() == ai_opponent:
+        elif lose_result == ai_opponent:
             return 10000
 
         # Check for win conditions (only after a movement)
-        if last_play_was_movement:
-            if self.check_win() == ai_color:
+        if play and play[0] == "move":
+            win_result = self.check_win(play)
+            if win_result == ai_color:
                 return 9000
-            elif self.check_win() == ai_opponent:
+            elif win_result == ai_opponent:
                 return -9000
 
         score = 0

@@ -98,7 +98,8 @@ def choose_game_screen():
                     choose_AI_screen()
                     return
                 elif event.key == pygame.K_3:
-                    return "cvc"
+                    game_loop("cvc", None)
+                    return
                 elif event.key == pygame.K_4:
                     return "back"
 
@@ -289,7 +290,7 @@ def drawPieces():
         pygame.draw.circle(screen, piece[1], pos, width / 4)
         pygame.draw.circle(screen, "black", pos, width / 4, 1)
 
-def getComputerMoveMinimax(depth):
+def getComputerMoveMinimax(depth, ai_color="white"):
     best_value, best_move = minimax(
         state,
         depth=depth,  # Set appropriate depth for the AI
@@ -297,7 +298,7 @@ def getComputerMoveMinimax(depth):
         beta=float('inf'),
         maximizing_player=True,  # The computer (AI) plays as "white"
         last_play=None,
-        ai_color="white"
+        ai_color=ai_color
     )
     print("Computer's best move:", best_move)
     return best_move
@@ -306,9 +307,9 @@ def getComputerMoveMinimax(depth):
 def getComputerMoveMonteCarlo(state, depth, ai_color, num_simulations=100):
     best_move = montecarlo(
         state=state,
-        simulations=num_simulations,
+        depth=depth,
+        num_simulations=num_simulations,
         ai_color=ai_color,
-        simulation_depth=depth
     )
     print("Monte Carlo best move:", best_move)
     return best_move
@@ -509,7 +510,6 @@ def game_loop(mode, AIMode):
                             win_screen(winner)
                             return
 
-
     if mode == "pvc" and AIMode=="montecarlo":
         while True:
             screen.fill("lightgoldenrod")
@@ -606,7 +606,7 @@ def game_loop(mode, AIMode):
             if state.current_player == "white":
                 print("I can get here")
 
-                best_move = getComputerMoveMonteCarlo(state, depth= 12, ai_color="white")
+                best_move = getComputerMoveMonteCarlo(state, depth= 10, ai_color="white")
 
                 if best_move is not None:
                     if best_move[0] == "place":
@@ -631,6 +631,71 @@ def game_loop(mode, AIMode):
                             return
                 state.current_player = "black"
                 pygame.time.wait(500)
+
+    if mode == "cvc":
+        while True:
+            screen.fill("lightgoldenrod")
+            drawBoard(state.current_player)
+            drawWaitingPieces()
+            drawPieces()
+            pygame.display.flip()
+
+            if state.current_player == "black":
+                print("I can get here")
+
+                best_move = getComputerMoveMinimax(depth=4, ai_color="black")
+
+                if best_move is not None:
+                    if best_move[0] == "place":
+                        state = state.place_piece(best_move[1], "black")
+                        last_play_was_move = False
+                    else:
+                        state = state.make_move(best_move)
+                        last_play_was_move = True
+                state.current_player = "white"
+
+                play = best_move
+                if state.is_game_over(play):
+                    loser = state.check_lose()
+                    if loser:
+                        winner = "black" if loser == "white" else "white"
+                        win_screen(winner)
+                        return
+                    else:
+                        winner = state.check_win(play)
+                        if winner:
+                            win_screen(winner)
+                            return
+
+
+            elif state.current_player == "white":
+                print("I can get here")
+
+                best_move = getComputerMoveMonteCarlo(state, depth=10, ai_color="white")
+
+                if best_move is not None:
+                    if best_move[0] == "place":
+                        state = state.place_piece(best_move[1], "white")
+                        last_play_was_move = False
+                    else:
+                        state = state.make_move(best_move)
+                        last_play_was_move = True
+
+                play = best_move
+                if state.is_game_over(play):
+                    loser = state.check_lose()
+                    if loser:
+                        winner = "black" if loser == "white" else "white"
+                        win_screen(winner)
+                        return
+                    else:
+                        winner = state.check_win(play)
+                        if winner:
+                            win_screen(winner)
+                            return
+                state.current_player = "black"
+
+            pygame.time.wait(500)
 
 
 if __name__ == '__main__':
