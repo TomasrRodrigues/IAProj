@@ -3,7 +3,6 @@ import sys
 import time
 from GameState import GameState
 from GameConstants import width, center_pos
-from GameTreeNode import GameTreeNode, GameTree
 from minimax import minimax
 from MonteCarlo import montecarlo
 
