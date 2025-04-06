@@ -15,6 +15,7 @@ AiMoves: 6
 
 
 
+
 Minimax with difficulty intermediate Average move time: 0.5774877667427063
 AiMoves: 4
 Minimax with difficulty intermediate Average move time: 0.5829207003116608
@@ -42,3 +43,24 @@ Minimax with difficulty hard Average move time: 9.181346707873875
 AiMoves: 9
 Minimax with difficulty hard Average move time: 9.8015576004982
 AiMoves: 4
+
+
+-----------------------MonteCarlo-----------------------------------
+Montecarlo with difficulty easy Average move time: 0.9106605450312296
+AiMoves: 6
+Montecarlo with difficulty easy Average move time: 0.6391363938649496
+AiMoves: 15
+Montecarlo with difficulty easy Average move time: 0.9907131459977891
+AiMoves: 9
+
+
+Montecarlo with difficulty intermediate Average move time: 1.663536616734096
+AiMoves: 7
+Montecarlo with difficulty intermediate Average move time: 1.6375952363014221
+AiMoves: 4
+
+
+Montecarlo with difficulty hard Average move time: 9.416839790344238
+AiMoves: 5
+Montecarlo with difficulty hard Average move time: 5.993001540501912
+AiMoves: 12
