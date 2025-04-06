@@ -137,10 +137,37 @@ def choose_AI_screen():
                 sys.exit()
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_1:
-                    game_loop("pvc", "minimax")
+                    choose_ai_difficulty("minimax")
                     return
                 elif event.key == pygame.K_2:
-                    game_loop("pvc", "montecarlo")
+                    choose_ai_difficulty("montecarlo")
+                    return
+                elif event.key == pygame.K_4:
+                    return
+
+def choose_ai_difficulty(ai):
+    while True:
+        screen.fill("lightgoldenrod")
+        draw_text("Choose your game mode", (500, 150), font_large)
+        draw_text("1. Easy", (550, 250), font_small)
+        draw_text("2. Intermediate", (550, 300), font_small)
+        draw_text("3. Hard", (550, 350), font_small)
+        draw_text("4. Go Back", (550, 500), font_small)
+        pygame.display.flip()
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_1:
+                    game_loop("pvc", ai, "easy", 50)
+                    return
+                elif event.key == pygame.K_2:
+                    game_loop("pvc", ai, "intermediate", 50)
+                    return
+                elif event.key == pygame.K_3:
+                    game_loop("pvc", ai, "hard", 250)
                     return
                 elif event.key == pygame.K_4:
                     return
@@ -281,6 +308,27 @@ def drawWaitingPieces():
 
     # Blit the text onto the screen
     screen.blit(text_surface, text_rect)
+
+def drawHelpButtons():
+    minimax_button_rect = pygame.Rect(1000, 300, 250, 50)  # x, y, width, height
+    montecarlo_button_rect = pygame.Rect(1000, 400, 250, 50)
+
+    # Draw Minimax Button
+    pygame.draw.rect(screen, "white", minimax_button_rect, border_radius=8)
+    pygame.draw.rect(screen, "black", minimax_button_rect, 2, border_radius=8)
+    text_surface = font_small.render("Help from Minimax", True, "black")
+    text_rect = text_surface.get_rect(center=minimax_button_rect.center)
+    screen.blit(text_surface, text_rect)
+
+    # Draw MonteCarlo Button
+    pygame.draw.rect(screen, "white", montecarlo_button_rect, border_radius=8)
+    pygame.draw.rect(screen, "black", montecarlo_button_rect, 2, border_radius=8)
+    text_surface = font_small.render("Help from MonteCarlo", True, "black")
+    text_rect = text_surface.get_rect(center=montecarlo_button_rect.center)
+    screen.blit(text_surface, text_rect)
+
+    return minimax_button_rect, montecarlo_button_rect  # Return rects for click detection
+
 def drawPieces():
     for piece in state.pieces:
         #if piece[0] == (-1, -1):
@@ -304,7 +352,7 @@ def getComputerMoveMinimax(depth, ai_color="white"):
     return best_move
 
 
-def getComputerMoveMonteCarlo(state, depth, ai_color, num_simulations=500):
+def getComputerMoveMonteCarlo(state, depth, ai_color, num_simulations=250):
     best_move = montecarlo(
         state=state,
         rollout_depth=depth,
@@ -314,7 +362,7 @@ def getComputerMoveMonteCarlo(state, depth, ai_color, num_simulations=500):
     print("Monte Carlo best move:", best_move)
     return best_move
 
-def game_loop(mode, AIMode):
+def game_loop(mode, AIMode, difficulty=None, num_simulations=None):
     global state
     state.reset()
     selected_piece = None  # selected piece to move (if is not None, selected_outside must be)
@@ -327,6 +375,7 @@ def game_loop(mode, AIMode):
             screen.fill("lightgoldenrod")
             drawBoard(state.current_player)
             drawWaitingPieces()
+            minimax_rect, montecarlo_rect = drawHelpButtons()
             drawPieces()
             pygame.display.flip()
 
@@ -341,12 +390,37 @@ def game_loop(mode, AIMode):
                     reserve_x, reserve_y = 100, 50 if state.current_player == "black" else 600
                     radius = width / 4
 
+
                     if ((mouse_x - reserve_x) ** 2 + (mouse_y - reserve_y) ** 2) ** 0.5 <= radius:
                         # If he has pieces in reserve, mark that a reserve piece is selected
                         if state.reserve[state.current_player] > 0:
                             selected_piece = None
                             selected_tile = None
                             selected_outside = state.current_player
+
+                    if minimax_rect.collidepoint((mouse_x, mouse_y)):
+                        best_move = getComputerMoveMinimax(depth=4, ai_color=state.current_player)
+                        if best_move[0]=="move":
+                            state = state.make_move(best_move)
+                        else:
+                            state = state.place_piece(best_move[1], state.current_player)
+                        selected_piece = None
+                        selected_tile = None
+                        selected_outside = None
+                        state.current_player = "white" if state.current_player == "black" else "black"
+
+                    elif montecarlo_rect.collidepoint((mouse_x, mouse_y)):
+                        best_move = getComputerMoveMonteCarlo(state, depth= 7, ai_color=state.current_player)
+                        if best_move[0]=="move":
+                            state = state.make_move(best_move)
+                        else:
+                            state = state.place_piece(best_move[1], state.current_player)
+                        selected_piece = None
+                        selected_tile = None
+                        selected_outside = None
+                        state.current_player = "white" if state.current_player == "black" else "black"
+
+
 
                     else:
                         # If reserve area is not clicked, check if an on-board tile was clicked
@@ -405,232 +479,292 @@ def game_loop(mode, AIMode):
                                             selected_outside = None
 
 
-    if mode == "pvc" and AIMode=="minimax":
-        while True:
-            screen.fill("lightgoldenrod")
-            drawBoard(state.current_player)
-            drawWaitingPieces()
-            drawPieces()
-            pygame.display.flip()
+    if mode == "pvc":
+        if AIMode=="minimax":
+            if difficulty == "easy":
+                depth = 2
+            elif difficulty == "intermediate":
+                depth = 3
+            else:
+                depth = 5
+            while True:
 
-            # Player's Turn (Black)
-            if state.current_player == "black":
-                for event in pygame.event.get():
-                    if event.type == pygame.QUIT:
-                        pygame.quit()
-                        sys.exit()
+                screen.fill("lightgoldenrod")
+                drawBoard(state.current_player)
+                drawWaitingPieces()
+                minimax_rect, montecarlo_rect = drawHelpButtons()
+                drawPieces()
+                pygame.display.flip()
 
-                    elif event.type == pygame.MOUSEBUTTONDOWN:
-                        mouse_x, mouse_y = event.pos
+                # Player's Turn (Black)
+                if state.current_player == "black":
+                    for event in pygame.event.get():
+                        if event.type == pygame.QUIT:
+                            pygame.quit()
+                            sys.exit()
 
-                        # Reserve area coordinates
-                        reserve_x, reserve_y = 100, 50 if state.current_player == "black" else 600
-                        radius = width / 4
+                        elif event.type == pygame.MOUSEBUTTONDOWN:
+                            mouse_x, mouse_y = event.pos
 
-                        # Check if the mouse is clicked within the reserve circle
-                        if ((mouse_x - reserve_x) ** 2 + (mouse_y - reserve_y) ** 2) ** 0.5 <= radius:
-                            # If the player has pieces in reserve, select a piece
-                            if state.reserve[state.current_player] > 0:
+                            # Reserve area coordinates
+                            reserve_x, reserve_y = 100, 50 if state.current_player == "black" else 600
+                            radius = width / 4
+
+                            # Check if the mouse is clicked within the reserve circle
+                            if ((mouse_x - reserve_x) ** 2 + (mouse_y - reserve_y) ** 2) ** 0.5 <= radius:
+                                # If the player has pieces in reserve, select a piece
+                                if state.reserve[state.current_player] > 0:
+                                    selected_piece = None
+                                    selected_tile = None
+                                    selected_outside = state.current_player
+
+                            if minimax_rect.collidepoint((mouse_x, mouse_y)):
+                                best_move = getComputerMoveMinimax(depth=4, ai_color=state.current_player)
+                                if best_move[0] == "move":
+                                    state = state.make_move(best_move)
+                                else:
+                                    state = state.place_piece(best_move[1], state.current_player)
                                 selected_piece = None
                                 selected_tile = None
-                                selected_outside = state.current_player
+                                selected_outside = None
+                                state.current_player = "white" if state.current_player == "black" else "black"
 
-                        else:
-                            # If reserve area is not clicked, check if an on-board tile was clicked
-                            for tile in tiles:
-                                center = adjust_pos(tiles[tile]["pos"], center_pos)
-                                if ((mouse_x - center[0]) ** 2 + (mouse_y - center[1]) ** 2) ** 0.5 <= width / 2:
-                                    if not state.is_tile_occupied(tile):  # If the tile is not occupied
-                                        if selected_outside is not None:
-                                            state = state.place_piece(tile, selected_outside)
-                                            play = ("place", tile)
-                                            state.current_player = "white"
-                                            selected_piece = None
-                                            selected_tile = None
-                                            selected_outside = None
-                                        elif selected_piece is not None:
-                                            mov_places = state.movable_places(selected_piece, state.current_player)
-                                            if tile not in mov_places:
-                                                print("Not a valid move")
-                                                continue
-                                            play = ("move", selected_piece, tile)
-                                            state = state.make_move((selected_piece, tile))
-                                            state.current_player = "white"
-                                            selected_piece = None
-                                            selected_tile = None
-                                            selected_outside = None
-                                            last_play_was_move = True
+                            elif montecarlo_rect.collidepoint((mouse_x, mouse_y)):
+                                best_move = getComputerMoveMonteCarlo(state, depth=7, ai_color=state.current_player)
+                                if best_move[0] == "move":
+                                    state = state.make_move(best_move)
+                                else:
+                                    state = state.place_piece(best_move[1], state.current_player)
+                                selected_piece = None
+                                selected_tile = None
+                                selected_outside = None
+                                state.current_player = "white" if state.current_player == "black" else "black"
 
-                                        # Check for win or loss conditions
-                                        if state.is_game_over(play):
-                                            loser = state.check_lose()
-                                            if loser:
-                                                winner = "white" if loser == "black" else "black"
-                                                win_screen(winner)
-                                                return
-                                            else:
-                                                winner = state.check_win(play)
-                                                if winner:
-                                                    win_screen(winner)
-                                                    return
-
-                                    else:
-                                        piece_at_the_tile = state.get_piece_at(tile)
-                                        if piece_at_the_tile is not None:
-                                            if piece_at_the_tile[1] == state.current_player:
-                                                selected_piece = piece_at_the_tile[0]
+                            else:
+                                # If reserve area is not clicked, check if an on-board tile was clicked
+                                for tile in tiles:
+                                    center = adjust_pos(tiles[tile]["pos"], center_pos)
+                                    if ((mouse_x - center[0]) ** 2 + (mouse_y - center[1]) ** 2) ** 0.5 <= width / 2:
+                                        if not state.is_tile_occupied(tile):  # If the tile is not occupied
+                                            if selected_outside is not None:
+                                                state = state.place_piece(tile, selected_outside)
+                                                play = ("place", tile)
+                                                state.current_player = "white"
+                                                selected_piece = None
                                                 selected_tile = None
                                                 selected_outside = None
+                                            elif selected_piece is not None:
+                                                mov_places = state.movable_places(selected_piece, state.current_player)
+                                                if tile not in mov_places:
+                                                    print("Not a valid move")
+                                                    continue
+                                                play = ("move", selected_piece, tile)
+                                                state = state.make_move((selected_piece, tile))
+                                                state.current_player = "white"
+                                                selected_piece = None
+                                                selected_tile = None
+                                                selected_outside = None
+                                                last_play_was_move = True
+
+                                            # Check for win or loss conditions
+                                            if state.is_game_over(play):
+                                                loser = state.check_lose()
+                                                if loser:
+                                                    winner = "white" if loser == "black" else "black"
+                                                    win_screen(winner)
+                                                    return
+                                                else:
+                                                    winner = state.check_win(play)
+                                                    if winner:
+                                                        win_screen(winner)
+                                                        return
+
+                                        else:
+                                            piece_at_the_tile = state.get_piece_at(tile)
+                                            if piece_at_the_tile is not None:
+                                                if piece_at_the_tile[1] == state.current_player:
+                                                    selected_piece = piece_at_the_tile[0]
+                                                    selected_tile = None
+                                                    selected_outside = None
 
 
-            elif state.current_player == "white":
-                print("I can get here")
+                elif state.current_player == "white":
+                    print("I can get here")
 
-                best_move = getComputerMoveMinimax(depth=4)
+                    best_move = getComputerMoveMinimax(depth=depth)
 
-                if best_move is not None:
-                    if best_move[0] == "place":
-                        state = state.place_piece(best_move[1], "white")
-                        last_play_was_move = False
-                    else:
-                        state = state.make_move(best_move)
-                        last_play_was_move=True
-                state.current_player = "black"
+                    if best_move is not None:
+                        if best_move[0] == "place":
+                            state = state.place_piece(best_move[1], "white")
+                            last_play_was_move = False
+                        else:
+                            state = state.make_move(best_move)
+                            last_play_was_move=True
+                    state.current_player = "black"
 
-                play=best_move
-                if state.is_game_over(play):
-                    loser = state.check_lose()
-                    if loser:
-                        winner = "black" if loser == "white" else "white"
-                        win_screen(winner)
-                        return
-                    else:
-                        winner = state.check_win(play)
-                        if winner:
+                    play=best_move
+                    if state.is_game_over(play):
+                        loser = state.check_lose()
+                        if loser:
+                            winner = "black" if loser == "white" else "white"
                             win_screen(winner)
                             return
+                        else:
+                            winner = state.check_win(play)
+                            if winner:
+                                win_screen(winner)
+                                return
 
-    if mode == "pvc" and AIMode=="montecarlo":
-        while True:
-            screen.fill("lightgoldenrod")
-            drawBoard(state.current_player)
-            drawWaitingPieces()
-            drawPieces()
-            pygame.display.flip()
+        if AIMode=="montecarlo":
+            if difficulty == "easy":
+                depth = 3
+            elif difficulty == "intermediate":
+                depth = 5
+            else:
+                depth = 8
+            while True:
+                screen.fill("lightgoldenrod")
+                drawBoard(state.current_player)
+                drawWaitingPieces()
+                minimax_rect, montecarlo_rect = drawHelpButtons()
+                drawPieces()
+                pygame.display.flip()
 
-            # Player's Turn (Black)
-            if state.current_player == "black":
-                for event in pygame.event.get():
-                    if event.type == pygame.QUIT:
-                        pygame.quit()
-                        sys.exit()
+                # Player's Turn (Black)
+                if state.current_player == "black":
+                    for event in pygame.event.get():
+                        if event.type == pygame.QUIT:
+                            pygame.quit()
+                            sys.exit()
 
-                    elif event.type == pygame.MOUSEBUTTONDOWN:
-                        mouse_x, mouse_y = event.pos
+                        elif event.type == pygame.MOUSEBUTTONDOWN:
+                            mouse_x, mouse_y = event.pos
 
-                        # Reserve area coordinates
-                        reserve_x, reserve_y = 100, 50 if state.current_player == "black" else 600
-                        radius = width / 4
+                            # Reserve area coordinates
+                            reserve_x, reserve_y = 100, 50 if state.current_player == "black" else 600
+                            radius = width / 4
 
-                        # Check if the mouse is clicked within the reserve circle
-                        if ((mouse_x - reserve_x) ** 2 + (mouse_y - reserve_y) ** 2) ** 0.5 <= radius:
-                            # If the player has pieces in reserve, select a piece
-                            if state.reserve[state.current_player] > 0:
+                            # Check if the mouse is clicked within the reserve circle
+                            if ((mouse_x - reserve_x) ** 2 + (mouse_y - reserve_y) ** 2) ** 0.5 <= radius:
+                                # If the player has pieces in reserve, select a piece
+                                if state.reserve[state.current_player] > 0:
+                                    selected_piece = None
+                                    selected_tile = None
+                                    selected_outside = state.current_player
+
+                            if minimax_rect.collidepoint((mouse_x, mouse_y)):
+                                best_move = getComputerMoveMinimax(depth=4, ai_color=state.current_player)
+                                if best_move[0] == "move":
+                                    state = state.make_move(best_move)
+                                else:
+                                    state = state.place_piece(best_move[1], state.current_player)
                                 selected_piece = None
                                 selected_tile = None
-                                selected_outside = state.current_player
+                                selected_outside = None
+                                state.current_player = "white" if state.current_player == "black" else "black"
 
-                        else:
-                            # If reserve area is not clicked, check if an on-board tile was clicked
-                            for tile in tiles:
-                                center = adjust_pos(tiles[tile]["pos"], center_pos)
-                                if ((mouse_x - center[0]) ** 2 + (mouse_y - center[1]) ** 2) ** 0.5 <= width / 2:
-                                    if not state.is_tile_occupied(tile):  # If the tile is not occupied
-                                        if selected_outside is not None:
-                                            play = ("place", tile)
-                                            state = state.place_piece(tile, selected_outside)
-                                            state.current_player = "white"
-                                            selected_piece = None
-                                            selected_tile = None
-                                            selected_outside = None
-                                        elif selected_piece is not None:
-                                            mov_places = state.movable_places(selected_piece, state.current_player)
-                                            if tile not in mov_places:
-                                                print("Not a valid move")
-                                                continue
-                                            play = ("move", selected_piece, tile)
-                                            state = state.make_move((selected_piece, tile))
-                                            state.current_player = "white"
-                                            selected_piece = None
-                                            selected_tile = None
-                                            selected_outside = None
-                                            last_play_was_move = True
+                            elif montecarlo_rect.collidepoint((mouse_x, mouse_y)):
+                                best_move = getComputerMoveMonteCarlo(state, depth=7, ai_color=state.current_player)
+                                if best_move[0] == "move":
+                                    state = state.make_move(best_move)
+                                else:
+                                    state = state.place_piece(best_move[1], state.current_player)
+                                selected_piece = None
+                                selected_tile = None
+                                selected_outside = None
+                                state.current_player = "white" if state.current_player == "black" else "black"
 
-                                        if state.is_game_over(play):
-                                            loser = state.check_lose()
-                                            if loser:
-                                                winner = "white" if loser == "black" else "black"
-                                                win_screen(winner)
-                                                return
-                                            else:
-                                                winner = state.check_win(play)
-                                                if winner:
-                                                    win_screen(winner)
-                                                    return
-                                    else:
-                                        piece_at_the_tile = state.get_piece_at(tile)
-                                        if piece_at_the_tile is not None:
-                                            if piece_at_the_tile[1] == state.current_player:
-                                                selected_piece = piece_at_the_tile[0]
+                            else:
+                                # If reserve area is not clicked, check if an on-board tile was clicked
+                                for tile in tiles:
+                                    center = adjust_pos(tiles[tile]["pos"], center_pos)
+                                    if ((mouse_x - center[0]) ** 2 + (mouse_y - center[1]) ** 2) ** 0.5 <= width / 2:
+                                        if not state.is_tile_occupied(tile):  # If the tile is not occupied
+                                            if selected_outside is not None:
+                                                play = ("place", tile)
+                                                state = state.place_piece(tile, selected_outside)
+                                                state.current_player = "white"
+                                                selected_piece = None
                                                 selected_tile = None
                                                 selected_outside = None
+                                            elif selected_piece is not None:
+                                                mov_places = state.movable_places(selected_piece, state.current_player)
+                                                if tile not in mov_places:
+                                                    print("Not a valid move")
+                                                    continue
+                                                play = ("move", selected_piece, tile)
+                                                state = state.make_move((selected_piece, tile))
+                                                state.current_player = "white"
+                                                selected_piece = None
+                                                selected_tile = None
+                                                selected_outside = None
+                                                last_play_was_move = True
 
-                # Check for win or loss conditions
-                loser = state.check_lose()
-                if loser is not None:
-                    if loser == "black":
-                        loss_AI_screen()
-                    print(f"Loser: {loser}")
-                    return
-                if last_play_was_move:
-                    winner = state.check_win()
-                    if winner is not None:
-                        if winner == "white":
+                                            if state.is_game_over(play):
+                                                loser = state.check_lose()
+                                                if loser:
+                                                    winner = "white" if loser == "black" else "black"
+                                                    win_screen(winner)
+                                                    return
+                                                else:
+                                                    winner = state.check_win(play)
+                                                    if winner:
+                                                        win_screen(winner)
+                                                        return
+                                        else:
+                                            piece_at_the_tile = state.get_piece_at(tile)
+                                            if piece_at_the_tile is not None:
+                                                if piece_at_the_tile[1] == state.current_player:
+                                                    selected_piece = piece_at_the_tile[0]
+                                                    selected_tile = None
+                                                    selected_outside = None
+
+                    # Check for win or loss conditions
+                    loser = state.check_lose()
+                    if loser is not None:
+                        if loser == "black":
                             loss_AI_screen()
-                        else:
-                            win_AI_screen()
-                        print(f"Winner: {winner}")
+                        print(f"Loser: {loser}")
                         return
-                    last_play_was_move = False
-
-            elif state.current_player == "white":
-                print("I can get here")
-
-                best_move = getComputerMoveMonteCarlo(state, depth= 7, ai_color="white")
-
-                if best_move is not None:
-                    if best_move[0] == "place":
-                        state = state.place_piece(best_move[1], "white")
+                    if last_play_was_move:
+                        winner = state.check_win()
+                        if winner is not None:
+                            if winner == "white":
+                                loss_AI_screen()
+                            else:
+                                win_AI_screen()
+                            print(f"Winner: {winner}")
+                            return
                         last_play_was_move = False
-                    else:
-                        state = state.make_move(best_move)
-                        last_play_was_move=True
+
+                elif state.current_player == "white":
+                    print("I can get here")
+
+                    best_move = getComputerMoveMonteCarlo(state, depth= depth, ai_color="white", num_simulations=num_simulations)
+
+                    if best_move is not None:
+                        if best_move[0] == "place":
+                            state = state.place_piece(best_move[1], "white")
+                            last_play_was_move = False
+                        else:
+                            state = state.make_move(best_move)
+                            last_play_was_move=True
 
 
-                play=best_move
-                if state.is_game_over(play):
-                    loser = state.check_lose()
-                    if loser:
-                        winner = "black" if loser == "white" else "white"
-                        win_screen(winner)
-                        return
-                    else:
-                        winner = state.check_win(play)
-                        if winner:
+                    play=best_move
+                    if state.is_game_over(play):
+                        loser = state.check_lose()
+                        if loser:
+                            winner = "black" if loser == "white" else "white"
                             win_screen(winner)
                             return
-                state.current_player = "black"
-                pygame.time.wait(500)
+                        else:
+                            winner = state.check_win(play)
+                            if winner:
+                                win_screen(winner)
+                                return
+                    state.current_player = "black"
+                    pygame.time.wait(500)
 
     if mode == "cvc":
         while True:
