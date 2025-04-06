@@ -279,15 +279,18 @@ class GameState:
                 return color
         return None
 
+
     def evaluate_board(self, play, ai_color):
         ai_opponent = "black" if ai_color == "white" else "white"
 
         # Immediate loss/win conditions
         lose_result = self.check_lose()
-        if lose_result == ai_color:
+        #if lose_result == ai_color:
+        #    return -10000
+        #elif lose_result == ai_opponent:
+        #    return 10000
+        if lose_result is not None:
             return -10000
-        elif lose_result == ai_opponent:
-            return 10000
 
         # Check for win conditions (only after a movement)
         if play and play[0] == "move":
@@ -315,12 +318,14 @@ class GameState:
                 score -= align * 15
 
         # Mobility: compare AI's and opponent's valid moves
-        original_current = self.current_player
-        self.current_player = ai_color
-        ai_moves = len(self.get_valid_plays())
-        self.current_player = ai_opponent
-        opponent_moves = len(self.get_valid_plays())
-        self.current_player = original_current
+        temp_ai_state = self.copy_state()
+        temp_ai_state.current_player = ai_color
+        ai_moves = len(temp_ai_state.get_valid_plays())
+
+        temp_opponent_state = self.copy_state()
+        temp_opponent_state.current_player = ai_opponent
+        opponent_moves = len(temp_opponent_state.get_valid_plays())
+
         score += (ai_moves - opponent_moves) * 5
 
         return score

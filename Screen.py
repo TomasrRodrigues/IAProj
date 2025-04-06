@@ -304,10 +304,10 @@ def getComputerMoveMinimax(depth, ai_color="white"):
     return best_move
 
 
-def getComputerMoveMonteCarlo(state, depth, ai_color, num_simulations=100):
+def getComputerMoveMonteCarlo(state, depth, ai_color, num_simulations=500):
     best_move = montecarlo(
         state=state,
-        depth=depth,
+        rollout_depth=depth,
         num_simulations=num_simulations,
         ai_color=ai_color,
     )
@@ -603,10 +603,10 @@ def game_loop(mode, AIMode):
                         return
                     last_play_was_move = False
 
-            if state.current_player == "white":
+            elif state.current_player == "white":
                 print("I can get here")
 
-                best_move = getComputerMoveMonteCarlo(state, depth= 8, ai_color="white")
+                best_move = getComputerMoveMonteCarlo(state, depth= 7, ai_color="white")
 
                 if best_move is not None:
                     if best_move[0] == "place":
@@ -671,7 +671,7 @@ def game_loop(mode, AIMode):
             elif state.current_player == "white":
                 print("I can get here")
 
-                best_move = getComputerMoveMonteCarlo(state, depth=8, ai_color="white")
+                best_move = getComputerMoveMonteCarlo(state, depth=7, ai_color="white")
 
                 if best_move is not None:
                     if best_move[0] == "place":
