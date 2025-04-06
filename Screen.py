@@ -4,7 +4,7 @@ from GameState import GameState
 from GameConstants import width, center_pos
 from GameTreeNode import GameTreeNode, GameTree
 from minimax import minimax
-from MonteCarlo import mcts_search
+from MonteCarlo import montecarlo
 
 
 state = GameState()
@@ -304,11 +304,11 @@ def getComputerMoveMinimax(depth):
 
 
 def getComputerMoveMonteCarlo(state, depth, ai_color, num_simulations=100):
-    best_move = mcts_search(
-        root_state=state,
-        iterations=num_simulations,
-        max_depth=depth,
-        ai_color=ai_color
+    best_move = montecarlo(
+        state=state,
+        simulations=num_simulations,
+        ai_color=ai_color,
+        simulation_depth=depth
     )
     print("Monte Carlo best move:", best_move)
     return best_move
