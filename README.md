@@ -28,4 +28,6 @@ winget install Python.Python.3.10  # Replace "3.10" with your desired version
 python main.py
 ```
 
+Miguel Tomás Vieira Rodrigues | up202205749
+
    
